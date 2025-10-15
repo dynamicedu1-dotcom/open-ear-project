@@ -10,6 +10,7 @@ import Actions from "./pages/Actions";
 import Contact from "./pages/Contact";
 import Feedback from "./pages/Feedback";
 import Collaborate from "./pages/Collaborate";
+import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/collaborate" element={<Collaborate />} />
+          <Route path="/insights" element={<Insights />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
