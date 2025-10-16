@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceCard } from "@/components/VoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
+import { VoiceDetailDialog } from "@/components/VoiceDetailDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Search, Filter } from "lucide-react";
@@ -120,11 +121,12 @@ const Wall = () => {
     }
   };
 
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const handleVoiceClick = (id: string) => {
-    toast({
-      title: "Voice details",
-      description: "Full voice view coming soon!",
-    });
+    setSelectedVoiceId(id);
+    setDialogOpen(true);
   };
 
   return (
@@ -229,6 +231,12 @@ const Wall = () => {
       </div>
 
       <FloatingVoiceButton />
+      
+      <VoiceDetailDialog 
+        voiceId={selectedVoiceId}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </div>
   );
 };

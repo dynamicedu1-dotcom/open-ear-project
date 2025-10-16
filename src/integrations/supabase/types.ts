@@ -47,6 +47,44 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          author_name: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_anonymous: boolean | null
+          updated_at: string | null
+          voice_id: string
+        }
+        Insert: {
+          author_name?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          updated_at?: string | null
+          voice_id: string
+        }
+        Update: {
+          author_name?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          updated_at?: string | null
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_voice_id_fkey"
+            columns: ["voice_id"]
+            isOneToOne: false
+            referencedRelation: "voices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           created_at: string
