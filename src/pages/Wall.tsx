@@ -124,6 +124,15 @@ const Wall = () => {
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Auto-open dialog if voice ID is in URL
+  useEffect(() => {
+    const voiceParam = searchParams.get('voice');
+    if (voiceParam && voices.some(v => v.id === voiceParam)) {
+      setSelectedVoiceId(voiceParam);
+      setDialogOpen(true);
+    }
+  }, [searchParams, voices]);
+
   const handleVoiceClick = (id: string) => {
     setSelectedVoiceId(id);
     setDialogOpen(true);
