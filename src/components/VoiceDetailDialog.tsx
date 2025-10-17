@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -163,8 +163,12 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 gap-0 bg-background/95 backdrop-blur-lg">
-        <DialogHeader className={`p-6 pb-4 ${voice ? moodColors[voice.mood] : ''}`}>
+      <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 gap-0 bg-background/95 backdrop-blur-lg">
+        <DialogHeader className={`p-6 pb-4 flex-shrink-0 ${voice ? moodColors[voice.mood] : ''}`}>
+          <DialogTitle className="sr-only">Voice Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            View and respond to this voice with your comments
+          </DialogDescription>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <span className="text-4xl">{voice ? moodEmojis[voice.mood] : ""}</span>
@@ -188,11 +192,12 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          {loading ? (
-            <div className="py-12 text-center text-muted-foreground">Loading...</div>
-          ) : voice ? (
-            <div className="space-y-6 pb-6">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="px-6 pb-6">
+            {loading ? (
+              <div className="py-12 text-center text-muted-foreground">Loading...</div>
+            ) : voice ? (
+              <div className="space-y-6">
               {/* Voice Content */}
               <div className="space-y-3">
                 <p className="text-foreground leading-relaxed whitespace-pre-wrap">
@@ -260,13 +265,14 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
 
               <Separator />
 
-              {/* Add Comment Form */}
-              <CommentForm
-                voiceId={voice.id}
-                onCommentAdded={fetchComments}
-              />
-            </div>
-          ) : null}
+                {/* Add Comment Form */}
+                <CommentForm
+                  voiceId={voice.id}
+                  onCommentAdded={fetchComments}
+                />
+              </div>
+            ) : null}
+          </div>
         </ScrollArea>
       </DialogContent>
     </Dialog>
