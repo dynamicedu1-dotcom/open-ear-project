@@ -288,6 +288,9 @@ const Index = () => {
                 <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/feedback")}>
                   Feedback
                 </Button>
+                <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/auth")}>
+                  Sign In
+                </Button>
               </div>
             </div>
           </div>
