@@ -5,7 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Users, MessageSquare, Lightbulb, MessageCircle, Star } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Users, MessageSquare, Lightbulb, MessageCircle, Star, Plus, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Admin() {
@@ -34,11 +38,12 @@ export default function Admin() {
   const { data: stats } = useQuery({
     queryKey: ["adminStats"],
     queryFn: async () => {
-      const [voices, comments, actions, feedback] = await Promise.all([
+      const [voices, comments, actions, feedback, collaborations] = await Promise.all([
         supabase.from("voices").select("id", { count: "exact", head: true }),
         supabase.from("comments").select("id", { count: "exact", head: true }),
         supabase.from("actions").select("id", { count: "exact", head: true }),
         supabase.from("feedback").select("id", { count: "exact", head: true }),
+        supabase.from("feedback").select("id", { count: "exact", head: true }).eq("type", "collaboration"),
       ]);
 
       return {
@@ -46,6 +51,7 @@ export default function Admin() {
         comments: comments.count || 0,
         actions: actions.count || 0,
         feedback: feedback.count || 0,
+        collaborations: collaborations.count || 0,
       };
     },
     enabled: isAdmin,
@@ -102,7 +108,7 @@ export default function Admin() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Voices</CardTitle>
@@ -135,6 +141,16 @@ export default function Admin() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Collaborations</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.collaborations || 0}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Feedback Items</CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -150,8 +166,8 @@ export default function Admin() {
             <TabsTrigger value="voices">Voices</TabsTrigger>
             <TabsTrigger value="comments">Comments</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsTrigger value="collaborations">Collaborations</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="voices">
@@ -166,12 +182,12 @@ export default function Admin() {
             <ActionsManagement />
           </TabsContent>
 
-          <TabsContent value="feedback">
-            <FeedbackManagement />
+          <TabsContent value="collaborations">
+            <CollaborationsManagement />
           </TabsContent>
 
-          <TabsContent value="users">
-            <UsersManagement />
+          <TabsContent value="feedback">
+            <FeedbackManagement />
           </TabsContent>
         </Tabs>
       </div>
@@ -311,6 +327,15 @@ function CommentsManagement() {
 
 // Actions Management Component
 function ActionsManagement() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAction, setEditingAction] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    status: "in-progress",
+    image_url: "",
+  });
+
   const { data: actions, refetch } = useQuery({
     queryKey: ["adminActions"],
     queryFn: async () => {
@@ -338,6 +363,51 @@ function ActionsManagement() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingAction) {
+      const { error } = await supabase
+        .from("actions")
+        .update(formData)
+        .eq("id", editingAction.id);
+
+      if (error) {
+        toast.error("Failed to update action");
+      } else {
+        toast.success("Action updated successfully");
+        setDialogOpen(false);
+        setEditingAction(null);
+        setFormData({ title: "", description: "", status: "in-progress", image_url: "" });
+        refetch();
+      }
+    } else {
+      const { error } = await supabase
+        .from("actions")
+        .insert([formData]);
+
+      if (error) {
+        toast.error("Failed to create action");
+      } else {
+        toast.success("Action created successfully");
+        setDialogOpen(false);
+        setFormData({ title: "", description: "", status: "in-progress", image_url: "" });
+        refetch();
+      }
+    }
+  };
+
+  const handleEdit = (action: any) => {
+    setEditingAction(action);
+    setFormData({
+      title: action.title,
+      description: action.description,
+      status: action.status,
+      image_url: action.image_url || "",
+    });
+    setDialogOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -345,7 +415,74 @@ function ActionsManagement() {
         <CardDescription>Create and manage community actions</CardDescription>
       </CardHeader>
       <CardContent>
-        <Button className="mb-4">Create New Action</Button>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingAction(null);
+            setFormData({ title: "", description: "", status: "in-progress", image_url: "" });
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button className="mb-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Create New Action
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingAction ? "Edit Action" : "Create New Action"}</DialogTitle>
+              <DialogDescription>
+                {editingAction ? "Update the action details" : "Add a new action to track community initiatives"}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Action title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  required
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Describe the action..."
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Status *</Label>
+                <Input
+                  id="status"
+                  required
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  placeholder="e.g., in-progress, completed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="image_url">Image URL (optional)</Label>
+                <Input
+                  id="image_url"
+                  value={formData.image_url}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                {editingAction ? "Update Action" : "Create Action"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <div className="space-y-4">
           {actions?.map((action) => (
             <div key={action.id} className="flex items-start justify-between p-4 border rounded-lg">
@@ -354,18 +491,98 @@ function ActionsManagement() {
                 <p className="text-sm text-muted-foreground mb-2">{action.description}</p>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="px-2 py-1 bg-primary/10 rounded">{action.status}</span>
-                  <span>👁️ {action.views}</span>
+                  <span>👁️ {action.views || 0}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(action)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(action.id)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Collaborations Management Component
+function CollaborationsManagement() {
+  const { data: collaborations, refetch } = useQuery({
+    queryKey: ["adminCollaborations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("feedback")
+        .select("*")
+        .eq("type", "collaboration")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("feedback")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to delete collaboration request");
+    } else {
+      toast.success("Collaboration request deleted successfully");
+      refetch();
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Collaboration Requests</CardTitle>
+        <CardDescription>Manage partnership and collaboration requests</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {collaborations?.map((item) => (
+            <div key={item.id} className="flex items-start justify-between p-4 border rounded-lg">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-semibold">{item.name}</h3>
+                  <span className="text-sm font-medium px-2 py-1 bg-primary/10 rounded">
+                    {item.organization}
+                  </span>
+                </div>
+                <p className="text-sm mb-2">{item.message}</p>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  {item.email && <span>📧 {item.email}</span>}
+                  <span>📅 {new Date(item.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => handleDelete(action.id)}
+                onClick={() => handleDelete(item.id)}
               >
                 Delete
               </Button>
             </div>
           ))}
+          {!collaborations || collaborations.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">No collaboration requests yet</p>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -429,19 +646,3 @@ function FeedbackManagement() {
   );
 }
 
-// Users Management Component
-function UsersManagement() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Manage user roles and permissions</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">
-          User management functionality will be available once authentication is implemented.
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
