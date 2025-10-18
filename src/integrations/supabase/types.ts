@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      active_visitors: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_seen: string | null
+          page: string | null
+          session_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_seen?: string | null
+          page?: string | null
+          session_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_seen?: string | null
+          page?: string | null
+          session_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           author_name: string | null

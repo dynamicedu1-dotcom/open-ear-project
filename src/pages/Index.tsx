@@ -4,8 +4,9 @@ import { VoiceCard } from "@/components/VoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Mic, TrendingUp, Heart, MessageSquare } from "lucide-react";
+import { Mic, TrendingUp, Heart, MessageSquare, LogIn, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import VisitorCounter from "@/components/VisitorCounter";
 
 interface Voice {
   id: string;
@@ -24,6 +25,19 @@ const Index = () => {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [totalVoices, setTotalVoices] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const categories = [
     { name: "🎓 Education", value: "Education" },
@@ -285,17 +299,39 @@ const Index = () => {
                 <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/contact")}>
                   Contact Us
                 </Button>
+                <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/team")}>
+                  Our Team
+                </Button>
                 <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/feedback")}>
                   Feedback
                 </Button>
-                <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/auth")}>
-                  Sign In
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 justify-center md:justify-start flex items-center gap-2" 
+                  onClick={() => navigate(user ? "/admin" : "/auth")}
+                >
+                  {user ? (
+                    <>
+                      <Shield className="h-4 w-4" />
+                      Admin Panel
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4" />
+                      Sign In
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            © 2025 Dynamic Edu. All rights reserved.
+          <div className="mt-8 pt-8 border-t border-border">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                © 2025 Dynamic Edu. All rights reserved.
+              </p>
+              <VisitorCounter />
+            </div>
           </div>
         </div>
       </footer>

@@ -62,6 +62,9 @@ const Actions = () => {
     fetchActions();
   }, [statusFilter, sortBy]);
 
+  const inProgressActions = actions.filter(a => a.status.toLowerCase() === 'ongoing');
+  const completedActions = actions.filter(a => a.status.toLowerCase() === 'completed');
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -86,8 +89,34 @@ const Actions = () => {
         </div>
       </section>
 
+      {/* In Progress Actions Showcase */}
+      {inProgressActions.length > 0 && (
+        <section className="py-12 px-6 max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+            <Sparkles className="h-8 w-8 text-accent animate-pulse" />
+            Actions in Progress
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {inProgressActions.map((action) => (
+              <ActionCard
+                key={action.id}
+                id={action.id}
+                title={action.title}
+                description={action.description}
+                status={action.status}
+                views={action.views}
+                relatedVoices={action.related_voices || undefined}
+                imageUrl={action.image_url}
+                createdAt={action.created_at}
+                isInProgress
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Filters */}
-      <section className="py-8 px-6 max-w-7xl mx-auto">
+      <section className="py-8 px-6 max-w-7xl mx-auto border-t">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="flex gap-4 w-full sm:w-auto">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -114,7 +143,29 @@ const Actions = () => {
         </div>
       </section>
 
-      {/* Actions Grid */}
+      {/* Completed Actions */}
+      {completedActions.length > 0 && (
+        <section className="py-8 px-6 max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6">Completed Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {completedActions.map((action) => (
+              <ActionCard
+                key={action.id}
+                id={action.id}
+                title={action.title}
+                description={action.description}
+                status={action.status}
+                views={action.views}
+                relatedVoices={action.related_voices || undefined}
+                imageUrl={action.image_url}
+                createdAt={action.created_at}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* All Actions Grid */}
       <section className="py-8 px-6 max-w-7xl mx-auto">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

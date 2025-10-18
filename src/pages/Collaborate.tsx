@@ -256,6 +256,48 @@ const Collaborate = () => {
             </Card>
           </div>
         </div>
+
+        {/* Collaboration Statistics */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-center mb-8">Our Impact Together</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="text-center p-6 bg-gradient-to-br from-primary/10 to-accent/10">
+              <p className="text-4xl font-bold text-primary mb-2">50+</p>
+              <p className="text-muted-foreground">Active Collaborations</p>
+            </Card>
+            <Card className="text-center p-6 bg-gradient-to-br from-accent/10 to-primary/10">
+              <p className="text-4xl font-bold text-accent mb-2">10,000+</p>
+              <p className="text-muted-foreground">Students Impacted</p>
+            </Card>
+            <Card className="text-center p-6 bg-gradient-to-br from-primary/10 to-accent/10">
+              <p className="text-4xl font-bold text-primary mb-2">25+</p>
+              <p className="text-muted-foreground">Partner Organizations</p>
+            </Card>
+          </div>
+        </div>
+
+        {/* Testimonials */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-center mb-8">What Our Partners Say</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-foreground/80 mb-4 italic">
+                  "Working with Dynamic Edu has transformed how we engage with students. Their platform gives our community a real voice."
+                </p>
+                <p className="font-semibold">— Principal, Lincoln High School</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-foreground/80 mb-4 italic">
+                  "The collaboration has been seamless. Together we've created programs that truly resonate with young people."
+                </p>
+                <p className="font-semibold">— Director, Youth Empowerment NGO</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </section>
     </div>
   );

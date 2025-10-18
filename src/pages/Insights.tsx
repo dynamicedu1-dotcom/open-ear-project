@@ -172,52 +172,52 @@ const Insights = () => {
         ) : (
           <>
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 animate-slide-up">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12 animate-slide-up">
               <Card className="border-primary/20 shadow-card hover:shadow-lg transition-all">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CardHeader className="pb-2 md:pb-3">
+                  <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
                     Total Voices
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-primary">{data.totalVoices}</p>
+                  <p className="text-2xl md:text-4xl font-bold text-primary">{data.totalVoices}</p>
                 </CardContent>
               </Card>
 
               <Card className="border-accent/20 shadow-card hover:shadow-lg transition-all">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CardHeader className="pb-2 md:pb-3">
+                  <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
                     Actions Taken
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-accent">{data.totalActions}</p>
+                  <p className="text-2xl md:text-4xl font-bold text-accent">{data.totalActions}</p>
                 </CardContent>
               </Card>
 
               <Card className="border-mood-happy/20 shadow-card hover:shadow-lg transition-all">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CardHeader className="pb-2 md:pb-3">
+                  <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Heart className="w-4 h-4" />
                     Total Supports
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-mood-happy">{data.totalSupports}</p>
+                  <p className="text-2xl md:text-4xl font-bold text-mood-happy">{data.totalSupports}</p>
                 </CardContent>
               </Card>
 
               <Card className="border-mood-excited/20 shadow-card hover:shadow-lg transition-all">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CardHeader className="pb-2 md:pb-3">
+                  <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Star className="w-4 h-4" />
                     Avg Rating
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-4xl font-bold text-mood-excited">
+                  <p className="text-2xl md:text-4xl font-bold text-mood-excited">
                     {data.avgRating > 0 ? data.avgRating.toFixed(1) : "N/A"}
                   </p>
                 </CardContent>
@@ -225,7 +225,7 @@ const Insights = () => {
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 md:mb-12">
               {/* Mood Breakdown */}
               <Card className="shadow-card animate-fade-in">
                 <CardHeader>

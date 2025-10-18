@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Users } from "lucide-react";
+import { Eye, Users, CheckCircle2, Sparkles } from "lucide-react";
 
 interface ActionCardProps {
   id: string;
@@ -11,6 +11,7 @@ interface ActionCardProps {
   relatedVoices?: string[];
   imageUrl?: string | null;
   createdAt: string;
+  isInProgress?: boolean;
 }
 
 export const ActionCard = ({
@@ -21,11 +22,14 @@ export const ActionCard = ({
   relatedVoices,
   imageUrl,
   createdAt,
+  isInProgress,
 }: ActionCardProps) => {
   const isCompleted = status.toLowerCase() === "completed";
   
   return (
-    <Card className="hover:shadow-accent-glow transition-all hover:scale-[1.02] overflow-hidden">
+    <Card className={`hover:shadow-accent-glow transition-all hover:scale-[1.02] overflow-hidden ${
+      isInProgress ? 'border-accent border-2 animate-pulse-border' : ''
+    }`}>
       {imageUrl && (
         <div className="w-full h-48 overflow-hidden">
           <img
@@ -37,10 +41,14 @@ export const ActionCard = ({
       )}
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-xl">{title}</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            {isCompleted && <CheckCircle2 className="h-5 w-5 text-mood-happy" />}
+            {isInProgress && <Sparkles className="h-5 w-5 text-accent animate-pulse" />}
+            {title}
+          </CardTitle>
           <Badge
             variant={isCompleted ? "default" : "secondary"}
-            className={isCompleted ? "bg-mood-happy" : "bg-accent"}
+            className={`${isCompleted ? "bg-mood-happy" : isInProgress ? "bg-accent animate-pulse" : "bg-secondary"}`}
           >
             {status}
           </Badge>
