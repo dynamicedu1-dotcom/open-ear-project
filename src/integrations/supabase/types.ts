@@ -117,6 +117,7 @@ export type Database = {
           message: string
           name: string | null
           organization: string | null
+          phone: string | null
           rating: number | null
           type: string
         }
@@ -127,6 +128,7 @@ export type Database = {
           message: string
           name?: string | null
           organization?: string | null
+          phone?: string | null
           rating?: number | null
           type: string
         }
@@ -137,8 +139,87 @@ export type Database = {
           message?: string
           name?: string | null
           organization?: string | null
+          phone?: string | null
           rating?: number | null
           type?: string
+        }
+        Relationships: []
+      }
+      partners: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          testimonial: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          testimonial?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          testimonial?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          display_order: number | null
+          email: string
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string
+          profile_image: string | null
+          role: string
+          whatsapp: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone: string
+          profile_image?: string | null
+          role: string
+          whatsapp: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string
+          profile_image?: string | null
+          role?: string
+          whatsapp?: string
         }
         Relationships: []
       }

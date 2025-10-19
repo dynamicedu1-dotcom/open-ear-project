@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Users, MessageSquare, Lightbulb, MessageCircle, Star, Plus, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { PartnersManagement } from "@/components/PartnersManagement";
+import { TeamManagement } from "@/components/TeamManagement";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -162,12 +164,14 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="voices">Voices</TabsTrigger>
             <TabsTrigger value="comments">Comments</TabsTrigger>
             <TabsTrigger value="actions">Actions</TabsTrigger>
             <TabsTrigger value="collaborations">Collaborations</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
+            <TabsTrigger value="partners">Partners</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
           </TabsList>
 
           <TabsContent value="voices">
@@ -188,6 +192,14 @@ export default function Admin() {
 
           <TabsContent value="feedback">
             <FeedbackManagement />
+          </TabsContent>
+
+          <TabsContent value="partners">
+            <PartnersManagement />
+          </TabsContent>
+
+          <TabsContent value="team">
+            <TeamManagement />
           </TabsContent>
         </Tabs>
       </div>
@@ -568,16 +580,28 @@ function CollaborationsManagement() {
                 <p className="text-sm mb-2">{item.message}</p>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   {item.email && <span>📧 {item.email}</span>}
+                  {item.phone && <span>📞 {item.phone}</span>}
                   <span>📅 {new Date(item.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(item.id)}
-              >
-                Delete
-              </Button>
+              <div className="flex gap-2">
+                {item.phone && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`https://wa.me/${item.phone.replace(/\D/g, '')}?text=Hi ${item.name}, thank you for your collaboration request with Dynamic Edu.`, '_blank')}
+                  >
+                    WhatsApp
+                  </Button>
+                )}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(item.id)}
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           ))}
           {!collaborations || collaborations.length === 0 && (

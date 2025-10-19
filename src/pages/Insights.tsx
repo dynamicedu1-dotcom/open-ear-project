@@ -234,8 +234,9 @@ const Insights = () => {
                 </CardHeader>
                 <CardContent>
                   {data.moodBreakdown.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
+                    <div className="overflow-x-auto">
+                      <ResponsiveContainer width="100%" height={300} minWidth={300}>
+                        <PieChart>
                         <Pie
                           data={data.moodBreakdown}
                           cx="50%"
@@ -256,6 +257,7 @@ const Insights = () => {
                         <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
+                    </div>
                   ) : (
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                       No mood data available yet
@@ -272,14 +274,16 @@ const Insights = () => {
                 </CardHeader>
                 <CardContent>
                   {data.categoryBreakdown.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={data.categoryBreakdown}>
-                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                    <div className="overflow-x-auto">
+                      <ResponsiveContainer width="100%" height={300} minWidth={300}>
+                        <BarChart data={data.categoryBreakdown}>
+                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 12 }} />
                         <YAxis />
                         <Tooltip />
                         <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
+                    </div>
                   ) : (
                     <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                       No category data available yet

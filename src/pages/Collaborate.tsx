@@ -15,31 +15,64 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Users, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PartnerCard } from "@/components/PartnerCard";
+import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+
+const collaborateSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().trim().email("Invalid email address").max(255),
+  phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20),
+  organizationType: z.string(),
+  collaborationArea: z.string(),
+  message: z.string().trim().min(10, "Message must be at least 10 characters").max(1000),
+});
 
 const Collaborate = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     organizationType: "individual",
     collaborationArea: "awareness",
     message: "",
   });
 
+  // Fetch active partners
+  const { data: partners = [] } = useQuery({
+    queryKey: ['partners'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     setLoading(true);
 
     try {
+      const validatedData = collaborateSchema.parse(formData);
+
       const { error } = await supabase.from("feedback").insert([
         {
-          name: formData.name,
-          email: formData.email,
-          organization: formData.organizationType,
+          name: validatedData.name,
+          email: validatedData.email,
+          phone: validatedData.phone,
+          organization: validatedData.organizationType,
           type: "collaboration",
-          message: `[${formData.collaborationArea}] ${formData.message}`,
+          message: `[${validatedData.collaborationArea}] ${validatedData.message}`,
         },
       ]);
 
@@ -53,17 +86,32 @@ const Collaborate = () => {
       setFormData({
         name: "",
         email: "",
+        phone: "",
         organizationType: "individual",
         collaborationArea: "awareness",
         message: "",
       });
-    } catch (error) {
-      console.error("Error submitting:", error);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast({
+          title: "Validation Error",
+          description: "Please check the form for errors",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -137,7 +185,26 @@ const Collaborate = () => {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   placeholder="your@email.com"
+                  className={errors.email ? "border-destructive" : ""}
                 />
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="+1234567890"
+                  className={errors.phone ? "border-destructive" : ""}
+                />
+                {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                <p className="text-xs text-muted-foreground">We'll use this to contact you about collaboration opportunities</p>
               </div>
 
               <div className="space-y-2">
@@ -256,6 +323,21 @@ const Collaborate = () => {
             </Card>
           </div>
         </div>
+
+        {/* Trusted Partners */}
+        {partners && partners.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-center mb-8">Organizations That Trust Us</h2>
+            <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+              We're proud to collaborate with leading organizations across Ethiopia
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {partners.map((partner) => (
+                <PartnerCard key={partner.id} partner={partner} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Collaboration Statistics */}
         <div className="mt-16">
