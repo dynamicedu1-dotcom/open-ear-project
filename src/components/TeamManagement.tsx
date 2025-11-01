@@ -8,12 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 export function TeamManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     role: "",
@@ -117,6 +119,78 @@ export function TeamManagement() {
     });
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('team-avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('team-avatars')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, profile_image: publicUrl });
+      toast.success("Image uploaded successfully");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleImageUpload(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, profile_image: "" });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -197,16 +271,66 @@ export function TeamManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="profile_image">Profile Image URL</Label>
-                <Input
-                  id="profile_image"
-                  value={formData.profile_image}
-                  onChange={(e) => setFormData({ ...formData, profile_image: e.target.value })}
-                  placeholder="https://example.com/avatar.jpg"
-                />
-                {formData.profile_image && (
-                  <div className="mt-2 p-4 border rounded bg-muted">
-                    <img src={formData.profile_image} alt="Preview" className="h-20 w-20 rounded-full object-cover" />
+                <Label>Profile Image</Label>
+                {formData.profile_image ? (
+                  <div className="relative w-full p-4 border rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-4">
+                      <img 
+                        src={formData.profile_image} 
+                        alt="Preview" 
+                        className="h-24 w-24 rounded-full object-cover border-2 border-border"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">Image uploaded</p>
+                        <p className="text-xs text-muted-foreground">Click remove to change image</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRemoveImage}
+                        disabled={uploading}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      dragActive 
+                        ? "border-primary bg-primary/5" 
+                        : "border-border hover:border-primary/50"
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                  >
+                    <input
+                      type="file"
+                      id="profile_image"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                    />
+                    <label htmlFor="profile_image" className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="p-3 rounded-full bg-primary/10">
+                          <Upload className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {uploading ? "Uploading..." : "Drop image here or click to upload"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            JPG, PNG or WEBP (max 2MB)
+                          </p>
+                        </div>
+                      </div>
+                    </label>
                   </div>
                 )}
               </div>
