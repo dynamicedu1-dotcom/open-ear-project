@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CommentCard } from "./CommentCard";
 import { CommentForm } from "./CommentForm";
-import { X, Heart, MessageCircle, MapPin, User } from "lucide-react";
+import { Heart, MessageCircle, MapPin, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface Voice {
@@ -169,26 +169,16 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
           <DialogDescription className="sr-only">
             View and respond to this voice with your comments
           </DialogDescription>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-4xl">{voice ? moodEmojis[voice.mood] : ""}</span>
-              <div>
-                <Badge variant="secondary" className="mb-1">
-                  {voice?.category}
-                </Badge>
-                <p className="text-xs text-muted-foreground">
-                  {voice && formatDistanceToNow(new Date(voice.created_at), { addSuffix: true })}
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">{voice ? moodEmojis[voice.mood] : ""}</span>
+            <div>
+              <Badge variant="secondary" className="mb-1">
+                {voice?.category}
+              </Badge>
+              <p className="text-xs text-muted-foreground">
+                {voice && formatDistanceToNow(new Date(voice.created_at), { addSuffix: true })}
+              </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 

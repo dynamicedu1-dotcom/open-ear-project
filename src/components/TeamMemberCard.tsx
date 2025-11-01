@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, MessageCircle } from "lucide-react";
 
 interface TeamMember {
-  id: number;
+  id: string;
   name: string;
   role: string;
   image: string;

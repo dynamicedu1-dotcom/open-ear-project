@@ -2,102 +2,36 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TeamMemberCard from "@/components/TeamMemberCard";
-
-const teamMembers = [
-  {
-    id: 1,
-    name: "Dr. Sarah Johnson",
-    role: "CEO & Founder",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-    phone: "+1-555-0101",
-    email: "sarah.johnson@dynamicedu.com",
-    whatsapp: "15550101"
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    role: "Head of Education",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-    phone: "+1-555-0102",
-    email: "michael.chen@dynamicedu.com",
-    whatsapp: "15550102"
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    role: "Student Relations Manager",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
-    phone: "+1-555-0103",
-    email: "emily.rodriguez@dynamicedu.com",
-    whatsapp: "15550103"
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    role: "Technology Director",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-    phone: "+1-555-0104",
-    email: "david.kim@dynamicedu.com",
-    whatsapp: "15550104"
-  },
-  {
-    id: 5,
-    name: "Aisha Patel",
-    role: "Community Engagement Lead",
-    image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop",
-    phone: "+1-555-0105",
-    email: "aisha.patel@dynamicedu.com",
-    whatsapp: "15550105"
-  },
-  {
-    id: 6,
-    name: "James Wilson",
-    role: "Partnership Coordinator",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
-    phone: "+1-555-0106",
-    email: "james.wilson@dynamicedu.com",
-    whatsapp: "15550106"
-  },
-  {
-    id: 7,
-    name: "Sofia Martinez",
-    role: "Content Strategist",
-    image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop",
-    phone: "+1-555-0107",
-    email: "sofia.martinez@dynamicedu.com",
-    whatsapp: "15550107"
-  },
-  {
-    id: 8,
-    name: "Robert Taylor",
-    role: "Program Manager",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop",
-    phone: "+1-555-0108",
-    email: "robert.taylor@dynamicedu.com",
-    whatsapp: "15550108"
-  },
-  {
-    id: 9,
-    name: "Lisa Anderson",
-    role: "Research Analyst",
-    image: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop",
-    phone: "+1-555-0109",
-    email: "lisa.anderson@dynamicedu.com",
-    whatsapp: "15550109"
-  },
-  {
-    id: 10,
-    name: "Kevin Brown",
-    role: "Operations Manager",
-    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop",
-    phone: "+1-555-0110",
-    email: "kevin.brown@dynamicedu.com",
-    whatsapp: "15550110"
-  }
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Team = () => {
   const navigate = useNavigate();
+
+  // Fetch team members from database
+  const { data: teamMembers = [], isLoading } = useQuery({
+    queryKey: ['team-members'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Map database fields to component props
+      return data.map((member) => ({
+        id: member.id,
+        name: member.name,
+        role: member.role,
+        image: member.profile_image || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+        phone: member.phone,
+        email: member.email,
+        whatsapp: member.whatsapp,
+      }));
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -123,9 +57,19 @@ const Team = () => {
 
         {/* Team Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-          {teamMembers.map((member) => (
-            <TeamMemberCard key={member.id} member={member} />
-          ))}
+          {isLoading ? (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              Loading team members...
+            </div>
+          ) : teamMembers.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              No team members to display. Check back soon!
+            </div>
+          ) : (
+            teamMembers.map((member) => (
+              <TeamMemberCard key={member.id} member={member} />
+            ))
+          )}
         </div>
 
         {/* CTA Section */}

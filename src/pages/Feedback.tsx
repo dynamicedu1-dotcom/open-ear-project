@@ -16,11 +16,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const feedbackSchema = z.object({
+  name: z.string().trim().max(100).optional(),
+  email: z.string().trim().email("Invalid email address").max(255).optional().or(z.literal("")),
+  organization: z.string().trim().max(200).optional(),
+  type: z.string(),
+  rating: z.number().min(0).max(5).optional(),
+  message: z.string().trim().min(1, "Message is required").max(1000, "Message must be less than 1000 characters"),
+});
 
 const Feedback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -32,17 +43,20 @@ const Feedback = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     setLoading(true);
 
     try {
+      const validatedData = feedbackSchema.parse(formData);
+
       const { error } = await supabase.from("feedback").insert([
         {
-          name: formData.name || null,
-          email: formData.email || null,
-          organization: formData.organization || null,
-          type: formData.type,
-          rating: formData.rating || null,
-          message: formData.message,
+          name: validatedData.name || null,
+          email: validatedData.email || null,
+          organization: validatedData.organization || null,
+          type: validatedData.type,
+          rating: validatedData.rating || null,
+          message: validatedData.message,
         },
       ]);
 
@@ -61,13 +75,28 @@ const Feedback = () => {
         rating: 0,
         message: "",
       });
-    } catch (error) {
-      console.error("Error submitting:", error);
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        toast({
+          title: "Validation Error",
+          description: "Please check the form for errors",
+          variant: "destructive",
+        });
+      } else {
+        console.error("Error submitting:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -129,7 +158,9 @@ const Feedback = () => {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     placeholder="your@email.com"
+                    className={errors.email ? "border-destructive" : ""}
                   />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
               </div>
 
@@ -193,9 +224,10 @@ const Feedback = () => {
                     setFormData({ ...formData, message: e.target.value })
                   }
                   placeholder="Tell us what you think..."
-                  className="min-h-[150px]"
+                  className={`min-h-[150px] ${errors.message ? "border-destructive" : ""}`}
                   maxLength={1000}
                 />
+                {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
                 <p className="text-sm text-muted-foreground text-right">
                   {formData.message.length}/1000
                 </p>

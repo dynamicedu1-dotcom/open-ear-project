@@ -22,10 +22,10 @@ import { z } from "zod";
 const collaborateSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().trim().email("Invalid email address").max(255),
-  phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(20),
+  phone: z.string().trim().min(8, "Phone number must be at least 8 digits").max(20, "Phone number is too long").regex(/[\d\s\-\+\(\)]+/, "Please enter a valid phone number"),
   organizationType: z.string(),
   collaborationArea: z.string(),
-  message: z.string().trim().min(10, "Message must be at least 10 characters").max(1000),
+  message: z.string().trim().min(20, "Please provide more details (at least 20 characters)").max(1000),
 });
 
 const Collaborate = () => {
@@ -171,7 +171,9 @@ const Collaborate = () => {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="Your name or organization"
+                  className={errors.name ? "border-destructive" : ""}
                 />
+                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -260,9 +262,10 @@ const Collaborate = () => {
                     setFormData({ ...formData, message: e.target.value })
                   }
                   placeholder="Share your ideas, goals, and how you'd like to collaborate with Dynamic Edu..."
-                  className="min-h-[150px]"
+                  className={`min-h-[150px] ${errors.message ? "border-destructive" : ""}`}
                   maxLength={1000}
                 />
+                {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
                 <p className="text-sm text-muted-foreground text-right">
                   {formData.message.length}/1000
                 </p>
