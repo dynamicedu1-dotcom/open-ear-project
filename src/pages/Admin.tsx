@@ -13,31 +13,12 @@ import { ArrowLeft, Users, MessageSquare, Lightbulb, MessageCircle, Star, Plus, 
 import { toast } from "sonner";
 import { PartnersManagement } from "@/components/PartnersManagement";
 import { TeamManagement } from "@/components/TeamManagement";
+import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
 export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("voices");
-
-  // Check if user is admin
-  const { data: isAdmin, isLoading: checkingAuth } = useQuery({
-    queryKey: ["isAdmin"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/auth?redirect=/admin');
-        return false;
-      }
-
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      return !!data;
-    },
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Fetch statistics
   const { data: stats } = useQuery({
@@ -59,44 +40,18 @@ export default function Admin() {
         collaborations: collaborations.count || 0,
       };
     },
-    enabled: isAdmin,
+    enabled: isAuthenticated,
   });
 
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-pulse">Checking access...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You don't have permission to access the admin panel.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/")} className="w-full">
-              Return Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return <AdminPasswordDialog open={!isAuthenticated} onSuccess={() => setIsAuthenticated(true)} />;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
       <div className="container mx-auto p-4 md:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -106,75 +61,75 @@ export default function Admin() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Admin Panel</h1>
-              <p className="text-muted-foreground">Manage your platform</p>
+              <h1 className="text-2xl md:text-3xl font-bold">Admin Panel</h1>
+              <p className="text-sm text-muted-foreground">Manage your platform</p>
             </div>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Voices</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Voices</CardTitle>
               <MessageCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.voices || 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats?.voices || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Comments</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Comments</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.comments || 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats?.comments || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Actions</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Actions</CardTitle>
               <Lightbulb className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.actions || 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats?.actions || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Collaborations</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Collabs</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.collaborations || 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats?.collaborations || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Feedback Items</CardTitle>
+              <CardTitle className="text-xs md:text-sm font-medium">Feedback</CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.feedback || 0}</div>
+              <div className="text-xl md:text-2xl font-bold">{stats?.feedback || 0}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="voices">Voices</TabsTrigger>
-            <TabsTrigger value="comments">Comments</TabsTrigger>
-            <TabsTrigger value="actions">Actions</TabsTrigger>
-            <TabsTrigger value="collaborations">Collaborations</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
-            <TabsTrigger value="partners">Partners</TabsTrigger>
-            <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-1">
+            <TabsTrigger value="voices" className="text-xs md:text-sm">Voices</TabsTrigger>
+            <TabsTrigger value="comments" className="text-xs md:text-sm">Comments</TabsTrigger>
+            <TabsTrigger value="actions" className="text-xs md:text-sm">Actions</TabsTrigger>
+            <TabsTrigger value="collaborations" className="text-xs md:text-sm">Collab</TabsTrigger>
+            <TabsTrigger value="feedback" className="text-xs md:text-sm">Feedback</TabsTrigger>
+            <TabsTrigger value="partners" className="text-xs md:text-sm">Partners</TabsTrigger>
+            <TabsTrigger value="team" className="text-xs md:text-sm">Team</TabsTrigger>
           </TabsList>
 
           <TabsContent value="voices">
@@ -248,26 +203,27 @@ function VoicesManagement() {
       <CardContent>
         <div className="space-y-4">
           {voices?.map((voice) => (
-            <div key={voice.id} className="flex items-start justify-between p-4 border rounded-lg">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+            <div key={voice.id} className="flex flex-col sm:flex-row items-start justify-between p-4 border rounded-lg gap-3">
+              <div className="flex-1 w-full">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="text-lg">{voice.mood}</span>
-                  <span className="text-sm font-medium px-2 py-1 bg-primary/10 rounded">
+                  <span className="text-xs md:text-sm font-medium px-2 py-1 bg-primary/10 rounded">
                     {voice.category}
                   </span>
                 </div>
-                <p className="text-sm mb-2">{voice.content}</p>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>{voice.username || "Anonymous"}</span>
+                <p className="text-sm mb-2 break-words">{voice.content}</p>
+                <div className="flex items-center gap-2 md:gap-4 text-xs text-muted-foreground flex-wrap">
+                  <span className="truncate">{voice.username || "Anonymous"}</span>
                   <span>❤️ {voice.support_count}</span>
                   <span>💬 {voice.comment_count}</span>
-                  <span>{new Date(voice.created_at).toLocaleDateString()}</span>
+                  <span className="hidden sm:inline">{new Date(voice.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={() => handleDelete(voice.id)}
+                className="w-full sm:w-auto"
               >
                 Delete
               </Button>
@@ -317,18 +273,19 @@ function CommentsManagement() {
       <CardContent>
         <div className="space-y-4">
           {comments?.map((comment) => (
-            <div key={comment.id} className="flex items-start justify-between p-4 border rounded-lg">
-              <div className="flex-1">
-                <p className="text-sm mb-2">{comment.content}</p>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>{comment.author_name || "Anonymous"}</span>
-                  <span>{new Date(comment.created_at).toLocaleDateString()}</span>
+            <div key={comment.id} className="flex flex-col sm:flex-row items-start justify-between p-4 border rounded-lg gap-3">
+              <div className="flex-1 w-full">
+                <p className="text-sm mb-2 break-words">{comment.content}</p>
+                <div className="flex items-center gap-2 md:gap-4 text-xs text-muted-foreground flex-wrap">
+                  <span className="truncate">{comment.author_name || "Anonymous"}</span>
+                  <span className="hidden sm:inline">{new Date(comment.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={() => handleDelete(comment.id)}
+                className="w-full sm:w-auto"
               >
                 Delete
               </Button>
