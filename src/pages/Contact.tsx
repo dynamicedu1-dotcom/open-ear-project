@@ -99,10 +99,10 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Email</h3>
                   <a
-                    href="mailto:team@dynamicedu.org"
+                    href="mailto:dynamicedu1@gmail.com"
                     className="text-foreground/70 hover:text-accent transition-colors"
                   >
-                    team@dynamicedu.org
+                    dynamicedu1@gmail.com
                   </a>
                 </div>
               </div>
@@ -112,10 +112,10 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Phone</h3>
                   <a
-                    href="tel:+1234567890"
+                    href="tel:+918787665349"
                     className="text-foreground/70 hover:text-accent transition-colors"
                   >
-                    +1 (234) 567-890
+                    +91 8787665349
                   </a>
                 </div>
               </div>
@@ -125,9 +125,9 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold mb-1">Address</h3>
                   <p className="text-foreground/70">
-                    Dynamic Edu Headquarters<br />
-                    Education District, City<br />
-                    State, Country
+                    Dynamic Edu <br />
+                    Ukhrul, Manipur 795142<br />
+                     india
                   </p>
                 </div>
               </div>
