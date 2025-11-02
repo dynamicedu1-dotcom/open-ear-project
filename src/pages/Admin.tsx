@@ -23,7 +23,10 @@ export default function Admin() {
     queryKey: ["isAdmin"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      if (!user) {
+        navigate('/auth?redirect=/admin');
+        return false;
+      }
 
       const { data } = await supabase
         .from("user_roles")

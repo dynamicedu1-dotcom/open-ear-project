@@ -57,6 +57,22 @@ const Collaborate = () => {
     },
   });
 
+  // Fetch partners with testimonials
+  const { data: partnersWithTestimonials = [] } = useQuery({
+    queryKey: ['partners-testimonials'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('is_active', true)
+        .not('testimonial', 'is', null)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -336,53 +352,30 @@ const Collaborate = () => {
             </p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {partners.map((partner) => (
-                <PartnerCard key={partner.id} partner={partner} />
+                <PartnerCard key={partner.id} partner={partner} showDialog={false} />
               ))}
             </div>
           </div>
         )}
 
-        {/* Collaboration Statistics */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-center mb-8">Our Impact Together</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="text-center p-6 bg-gradient-to-br from-primary/10 to-accent/10">
-              <p className="text-4xl font-bold text-primary mb-2">50+</p>
-              <p className="text-muted-foreground">Active Collaborations</p>
-            </Card>
-            <Card className="text-center p-6 bg-gradient-to-br from-accent/10 to-primary/10">
-              <p className="text-4xl font-bold text-accent mb-2">10,000+</p>
-              <p className="text-muted-foreground">Students Impacted</p>
-            </Card>
-            <Card className="text-center p-6 bg-gradient-to-br from-primary/10 to-accent/10">
-              <p className="text-4xl font-bold text-primary mb-2">25+</p>
-              <p className="text-muted-foreground">Partner Organizations</p>
-            </Card>
-          </div>
-        </div>
-
         {/* Testimonials */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold text-center mb-8">What Our Partners Say</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-foreground/80 mb-4 italic">
-                  "Working with Dynamic Edu has transformed how we engage with students. Their platform gives our community a real voice."
-                </p>
-                <p className="font-semibold">— Principal, Lincoln High School</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-foreground/80 mb-4 italic">
-                  "The collaboration has been seamless. Together we've created programs that truly resonate with young people."
-                </p>
-                <p className="font-semibold">— Director, Youth Empowerment NGO</p>
-              </CardContent>
-            </Card>
+        {partnersWithTestimonials && partnersWithTestimonials.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-center mb-8">What Our Partners Say</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {partnersWithTestimonials.map((partner) => (
+                <Card key={partner.id}>
+                  <CardContent className="pt-6">
+                    <blockquote className="text-foreground/80 mb-4 italic">
+                      "{partner.testimonial}"
+                    </blockquote>
+                    <p className="font-semibold">— {partner.name}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

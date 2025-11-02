@@ -17,23 +17,27 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Get redirect URL from query params
+  const searchParams = new URLSearchParams(window.location.search);
+  const redirectTo = searchParams.get('redirect') || '/';
+
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/");
+        navigate(redirectTo);
       }
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        navigate("/");
+        navigate(redirectTo);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

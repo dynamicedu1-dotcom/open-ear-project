@@ -13,28 +13,37 @@ interface Partner {
 
 interface PartnerCardProps {
   partner: Partner;
+  showDialog?: boolean;
 }
 
-export const PartnerCard = ({ partner }: PartnerCardProps) => {
+export const PartnerCard = ({ partner, showDialog = true }: PartnerCardProps) => {
+  const cardContent = (
+    <Card className={showDialog ? "cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105" : ""}>
+        <CardContent className="p-6 flex flex-col items-center gap-4">
+          {partner.logo_url ? (
+            <img 
+              src={partner.logo_url} 
+              alt={`${partner.name} logo`}
+              className="h-16 w-auto object-contain"
+            />
+          ) : (
+            <div className="h-16 w-24 bg-muted rounded flex items-center justify-center">
+              <span className="text-sm font-semibold text-muted-foreground">{partner.name}</span>
+            </div>
+          )}
+          <h3 className="font-semibold text-center">{partner.name}</h3>
+        </CardContent>
+      </Card>
+  );
+
+  if (!showDialog) {
+    return cardContent;
+  }
+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105">
-          <CardContent className="p-6 flex flex-col items-center gap-4">
-            {partner.logo_url ? (
-              <img 
-                src={partner.logo_url} 
-                alt={`${partner.name} logo`}
-                className="h-16 w-auto object-contain"
-              />
-            ) : (
-              <div className="h-16 w-24 bg-muted rounded flex items-center justify-center">
-                <span className="text-sm font-semibold text-muted-foreground">{partner.name}</span>
-              </div>
-            )}
-            <h3 className="font-semibold text-center">{partner.name}</h3>
-          </CardContent>
-        </Card>
+        {cardContent}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
