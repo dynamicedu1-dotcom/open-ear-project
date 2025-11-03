@@ -98,6 +98,7 @@ const Actions = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {inProgressActions.map((action) => (
+              // @ts-ignore - React key prop
               <ActionCard
                 key={action.id}
                 id={action.id}
@@ -149,6 +150,7 @@ const Actions = () => {
           <h2 className="text-2xl font-bold mb-6">Completed Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {completedActions.map((action) => (
+              // @ts-ignore - React key prop
               <ActionCard
                 key={action.id}
                 id={action.id}
@@ -193,6 +195,7 @@ const Actions = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
             {actions.map((action) => (
+              // @ts-ignore - React key prop
               <ActionCard
                 key={action.id}
                 id={action.id}

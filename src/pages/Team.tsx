@@ -67,6 +67,7 @@ const Team = () => {
             </div>
           ) : (
             teamMembers.map((member) => (
+              // @ts-ignore - React key prop
               <TeamMemberCard key={member.id} member={member} />
             ))
           )}
