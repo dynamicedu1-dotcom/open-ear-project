@@ -241,7 +241,6 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
                 ) : (
                   <div className="space-y-3">
                     {comments.map((comment) => (
-                      // @ts-ignore - React key prop
                       <CommentCard
                         key={comment.id}
                         authorName={comment.author_name}
