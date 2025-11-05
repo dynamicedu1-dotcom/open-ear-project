@@ -9,10 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Users, MessageSquare, Lightbulb, MessageCircle, Star, Plus, Edit } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree } from "lucide-react";
 import { toast } from "sonner";
 import { PartnersManagement } from "@/components/PartnersManagement";
 import { TeamManagement } from "@/components/TeamManagement";
+import { TopicsManagement } from "@/components/TopicsManagement";
+import { FeedbackTypesManagement } from "@/components/FeedbackTypesManagement";
+import { CollaborationOptionsManagement } from "@/components/CollaborationOptionsManagement";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
 export default function Admin() {
@@ -122,15 +126,51 @@ export default function Admin() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-1">
-            <TabsTrigger value="voices" className="text-xs md:text-sm">Voices</TabsTrigger>
-            <TabsTrigger value="comments" className="text-xs md:text-sm">Comments</TabsTrigger>
-            <TabsTrigger value="actions" className="text-xs md:text-sm">Actions</TabsTrigger>
-            <TabsTrigger value="collaborations" className="text-xs md:text-sm">Collab</TabsTrigger>
-            <TabsTrigger value="feedback" className="text-xs md:text-sm">Feedback</TabsTrigger>
-            <TabsTrigger value="partners" className="text-xs md:text-sm">Partners</TabsTrigger>
-            <TabsTrigger value="team" className="text-xs md:text-sm">Team</TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap rounded-md mb-6">
+            <TabsList className="inline-flex h-12 items-center justify-start w-max">
+              <TabsTrigger value="voices" className="flex items-center gap-2 min-h-[44px] px-4">
+                <MessageCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">Voices</span>
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="flex items-center gap-2 min-h-[44px] px-4">
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Comments</span>
+              </TabsTrigger>
+              <TabsTrigger value="actions" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Lightbulb className="h-4 w-4" />
+                <span className="hidden sm:inline">Actions</span>
+              </TabsTrigger>
+              <TabsTrigger value="collaborations" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Collaborations</span>
+              </TabsTrigger>
+              <TabsTrigger value="feedback" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Star className="h-4 w-4" />
+                <span className="hidden sm:inline">Feedback</span>
+              </TabsTrigger>
+              <TabsTrigger value="partners" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Handshake className="h-4 w-4" />
+                <span className="hidden sm:inline">Partners</span>
+              </TabsTrigger>
+              <TabsTrigger value="team" className="flex items-center gap-2 min-h-[44px] px-4">
+                <UserSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Team</span>
+              </TabsTrigger>
+              <TabsTrigger value="topics" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Tag className="h-4 w-4" />
+                <span className="hidden sm:inline">Topics</span>
+              </TabsTrigger>
+              <TabsTrigger value="feedback-types" className="flex items-center gap-2 min-h-[44px] px-4">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Feedback Types</span>
+              </TabsTrigger>
+              <TabsTrigger value="collab-options" className="flex items-center gap-2 min-h-[44px] px-4">
+                <FolderTree className="h-4 w-4" />
+                <span className="hidden sm:inline">Collab Options</span>
+              </TabsTrigger>
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
           <TabsContent value="voices">
             <VoicesManagement />
@@ -156,10 +196,22 @@ export default function Admin() {
             <PartnersManagement />
           </TabsContent>
 
-          <TabsContent value="team">
-            <TeamManagement />
-          </TabsContent>
-        </Tabs>
+        <TabsContent value="team">
+          <TeamManagement />
+        </TabsContent>
+
+        <TabsContent value="topics">
+          <TopicsManagement />
+        </TabsContent>
+
+        <TabsContent value="feedback-types">
+          <FeedbackTypesManagement />
+        </TabsContent>
+
+        <TabsContent value="collab-options">
+          <CollaborationOptionsManagement />
+        </TabsContent>
+      </Tabs>
       </div>
     </div>
   );

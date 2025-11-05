@@ -37,9 +37,35 @@ const Collaborate = () => {
     name: "",
     email: "",
     phone: "",
-    organizationType: "individual",
-    collaborationArea: "awareness",
+    organizationType: "",
+    collaborationArea: "",
     message: "",
+  });
+
+  const { data: orgTypes = [] } = useQuery({
+    queryKey: ['collaboration-types'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('collaboration_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: collabAreas = [] } = useQuery({
+    queryKey: ['collaboration-areas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('collaboration_areas')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Fetch active partners
@@ -226,12 +252,13 @@ const Collaborate = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Type *</Label>
+                <Label htmlFor="type">Organization Type *</Label>
                 <Select
                   value={formData.organizationType}
                   onValueChange={(value) =>
                     setFormData({ ...formData, organizationType: value })
                   }
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue />

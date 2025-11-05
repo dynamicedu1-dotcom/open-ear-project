@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Send } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const moods = [
   { emoji: "😃", value: "happy", label: "Happy" },
@@ -20,19 +21,23 @@ const moods = [
   { emoji: "❤️", value: "love", label: "Love" },
 ];
 
-const categories = [
-  "Education",
-  "Pressure",
-  "Future",
-  "Skills",
-  "Dreams",
-  "Other",
-];
-
 const Share = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['topics'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('topics')
+        .select('name')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data.map(t => t.name);
+    },
+  });
 
   const [formData, setFormData] = useState({
     isAnonymous: true,
