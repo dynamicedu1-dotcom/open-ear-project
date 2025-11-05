@@ -1,8 +1,10 @@
+import React from "react";
 import { Heart, MessageCircle } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 
 interface VoiceCardProps {
+  key?: React.Key;
   id: string;
   content: string;
   mood: "happy" | "calm" | "sad" | "angry" | "love";

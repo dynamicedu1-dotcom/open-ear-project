@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, Users, CheckCircle2, Sparkles } from "lucide-react";
 
 interface ActionCardProps {
+  key?: React.Key;
   id: string;
   title: string;
   description: string;

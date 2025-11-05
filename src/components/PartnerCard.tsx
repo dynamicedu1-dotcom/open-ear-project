@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ExternalLink } from "lucide-react";
@@ -12,6 +13,7 @@ interface Partner {
 }
 
 interface PartnerCardProps {
+  key?: React.Key;
   partner: Partner;
   showDialog?: boolean;
 }

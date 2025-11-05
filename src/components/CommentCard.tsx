@@ -1,8 +1,10 @@
+import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { User } from "lucide-react";
 
 interface CommentCardProps {
+  key?: React.Key;
   authorName: string | null;
   isAnonymous: boolean;
   content: string;

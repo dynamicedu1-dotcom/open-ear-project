@@ -1,3 +1,4 @@
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface TeamMember {
 }
 
 interface TeamMemberCardProps {
+  key?: React.Key;
   member: TeamMember;
 }
 
