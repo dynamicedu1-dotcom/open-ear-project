@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ActionCard } from "@/components/ActionCard";
+import { Navigation } from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Sparkles } from "lucide-react";
@@ -67,18 +68,11 @@ const Actions = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden gradient-accent py-16 px-6">
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Button>
-
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             You Said, We Did 💡
           </h1>

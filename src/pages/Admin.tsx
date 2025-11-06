@@ -23,6 +23,40 @@ export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("voices");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  // Check if user has admin role
+  const { data: userRole, isLoading: roleLoading } = useQuery({
+    queryKey: ["userRole"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .single();
+
+      return data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  // Update admin status when role data changes
+  React.useEffect(() => {
+    if (isAuthenticated && !roleLoading) {
+      if (!userRole) {
+        toast.error("Access denied. Admin role required.");
+        navigate("/auth");
+      } else {
+        setIsAdmin(true);
+      }
+    }
+  }, [userRole, roleLoading, isAuthenticated, navigate]);
 
   // Fetch statistics
   const { data: stats } = useQuery({
@@ -49,6 +83,18 @@ export default function Admin() {
 
   if (!isAuthenticated) {
     return <AdminPasswordDialog open={!isAuthenticated} onSuccess={() => setIsAuthenticated(true)} />;
+  }
+
+  // Show loading while checking admin role
+  if (roleLoading || isAdmin === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifying admin access...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -411,7 +457,12 @@ function ActionsManagement() {
         .insert([formData]);
 
       if (error) {
-        toast.error("Failed to create action");
+        console.error("Create action error:", error);
+        if (error.message.includes("row-level security")) {
+          toast.error("Permission denied. Admin role required.");
+        } else {
+          toast.error(`Failed to create action: ${error.message}`);
+        }
       } else {
         toast.success("Action created successfully");
         setDialogOpen(false);

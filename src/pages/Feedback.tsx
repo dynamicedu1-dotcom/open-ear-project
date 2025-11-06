@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Navigation } from "@/components/Navigation";
 import {
   Select,
   SelectContent,
@@ -104,18 +105,11 @@ const Feedback = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden gradient-accent py-16 px-6">
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Button>
-
           <MessageSquare className="h-16 w-16 mx-auto mb-6 text-accent-glow" />
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             We Value Your Feedback

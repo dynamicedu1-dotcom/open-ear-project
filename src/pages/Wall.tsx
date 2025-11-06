@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { VoiceCard } from "@/components/VoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
 import { VoiceDetailDialog } from "@/components/VoiceDetailDialog";
+import { Navigation } from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Search, Filter } from "lucide-react";
@@ -140,17 +141,10 @@ const Wall = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation />
+      
       <div className="gradient-warm py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <Button
-            variant="ghost"
-            className="mb-6"
-            onClick={() => navigate("/")}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
-
           <div className="text-center mb-8 animate-fade-in">
             <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-glow to-accent-glow bg-clip-text text-transparent">
               Opinion Wall
