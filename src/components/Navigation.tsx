@@ -28,6 +28,7 @@ export const Navigation = () => {
   const navLinks = [
     { path: "/", label: "Home", icon: Home },
     { path: "/wall", label: "Opinion Wall", icon: MessageSquare },
+    { path: "/core-team/wall", label: "Core Team", icon: Users },
     { path: "/actions", label: "Actions", icon: Lightbulb },
     { path: "/collaborate", label: "Collaborate", icon: Users },
     { path: "/contact", label: "Contact", icon: Mail },

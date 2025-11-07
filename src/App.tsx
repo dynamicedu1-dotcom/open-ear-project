@@ -15,6 +15,8 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Team from "./pages/Team";
+import CoreTeamDashboard from "./pages/CoreTeamDashboard";
+import CoreTeamWall from "./pages/CoreTeamWall";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,8 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/core-team/dashboard" element={<CoreTeamDashboard />} />
+          <Route path="/core-team/wall" element={<CoreTeamWall />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

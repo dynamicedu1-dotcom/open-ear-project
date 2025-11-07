@@ -246,6 +246,10 @@ export default function Admin() {
           <TeamManagement />
         </TabsContent>
 
+        <TabsContent value="core-posts">
+          <CoreTeamPostsManagement />
+        </TabsContent>
+
         <TabsContent value="topics">
           <TopicsManagement />
         </TabsContent>
