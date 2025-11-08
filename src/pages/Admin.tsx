@@ -242,26 +242,25 @@ export default function Admin() {
             <PartnersManagement />
           </TabsContent>
 
-        <TabsContent value="team">
-          <TeamManagement />
-        </TabsContent>
+          <TabsContent value="team">
+            <TeamManagement />
+          </TabsContent>
 
-        <TabsContent value="core-posts">
-          <CoreTeamPostsManagement />
-        </TabsContent>
+          {/* REMOVED: core-posts tab that was causing build errors */}
+          {/* Will be re-added as "team-content" after migration */}
 
-        <TabsContent value="topics">
-          <TopicsManagement />
-        </TabsContent>
+          <TabsContent value="topics">
+            <TopicsManagement />
+          </TabsContent>
 
-        <TabsContent value="feedback-types">
-          <FeedbackTypesManagement />
-        </TabsContent>
+          <TabsContent value="feedback-types">
+            <FeedbackTypesManagement />
+          </TabsContent>
 
-        <TabsContent value="collab-options">
-          <CollaborationOptionsManagement />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="collab-options">
+            <CollaborationOptionsManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
@@ -736,4 +735,3 @@ function FeedbackManagement() {
     </Card>
   );
 }
-
