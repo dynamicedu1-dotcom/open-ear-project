@@ -1,0 +1,313 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Navigation } from "@/components/Navigation";
+import { useIdentity } from "@/hooks/useIdentity";
+import { EmailCaptureModal } from "@/components/EmailCaptureModal";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, MessageCircle, Heart, Share2, User } from "lucide-react";
+
+export default function MyActivity() {
+  const navigate = useNavigate();
+  const { profile, isIdentified, isLoading, requestIdentity, requiresIdentity, cancelIdentityRequest } = useIdentity();
+  const [activeTab, setActiveTab] = useState("posts");
+
+  // Request identity if not identified
+  useEffect(() => {
+    if (!isLoading && !isIdentified) {
+      requestIdentity();
+    }
+  }, [isLoading, isIdentified, requestIdentity]);
+
+  // Fetch user's posts
+  const { data: myPosts } = useQuery({
+    queryKey: ["myPosts", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("voices")
+        .select("*")
+        .eq("user_profile_id", profile.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Fetch user's likes
+  const { data: myLikes } = useQuery({
+    queryKey: ["myLikes", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("voice_likes")
+        .select("*, voices(*)")
+        .eq("user_profile_id", profile.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Fetch user's comments
+  const { data: myComments } = useQuery({
+    queryKey: ["myComments", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*, voices(content)")
+        .eq("user_profile_id", profile.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  // Fetch user's reshares
+  const { data: myReshares } = useQuery({
+    queryKey: ["myReshares", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("voice_reshares")
+        .select("*, voices(*)")
+        .eq("user_profile_id", profile.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      
+      <EmailCaptureModal
+        open={requiresIdentity}
+        onOpenChange={(open) => !open && cancelIdentityRequest()}
+        actionDescription="view your activity"
+      />
+
+      <div className="container mx-auto p-4 md:p-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/wall")}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">My Activity</h1>
+            <p className="text-sm text-muted-foreground">
+              {profile?.is_anonymous ? "Anonymous" : profile?.display_name || profile?.email?.split("@")[0]}
+            </p>
+          </div>
+        </div>
+
+        {profile && (
+          <>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">My Posts</CardTitle>
+                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{myPosts?.length || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Likes Given</CardTitle>
+                  <Heart className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{myLikes?.length || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Comments</CardTitle>
+                  <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{myComments?.length || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Reshares</CardTitle>
+                  <Share2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{myReshares?.length || 0}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Activity Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="posts">My Posts</TabsTrigger>
+                <TabsTrigger value="comments">My Comments</TabsTrigger>
+                <TabsTrigger value="likes">Liked Posts</TabsTrigger>
+                <TabsTrigger value="reshares">Reshares</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="posts">
+                <Card>
+                  <CardContent className="p-4">
+                    {myPosts?.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>You haven't posted anything yet.</p>
+                        <Button onClick={() => navigate("/share")} className="mt-4">
+                          Share Your Voice
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {myPosts?.map((post: any) => (
+                          <div key={post.id} className="p-4 border rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg">{post.mood}</span>
+                              <span className="text-xs px-2 py-1 bg-primary/10 rounded">
+                                {post.category}
+                              </span>
+                            </div>
+                            <p className="text-sm mb-2">{post.content}</p>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <span>❤️ {post.support_count}</span>
+                              <span>💬 {post.comment_count}</span>
+                              <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="comments">
+                <Card>
+                  <CardContent className="p-4">
+                    {myComments?.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>You haven't commented on any posts yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {myComments?.map((comment: any) => (
+                          <div key={comment.id} className="p-4 border rounded-lg">
+                            <p className="text-sm mb-2">{comment.content}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(comment.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="likes">
+                <Card>
+                  <CardContent className="p-4">
+                    {myLikes?.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>You haven't liked any posts yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {myLikes?.map((like: any) => (
+                          <div key={like.id} className="p-4 border rounded-lg">
+                            {like.voices && (
+                              <>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg">{like.voices.mood}</span>
+                                  <span className="text-xs px-2 py-1 bg-primary/10 rounded">
+                                    {like.voices.category}
+                                  </span>
+                                </div>
+                                <p className="text-sm mb-2">{like.voices.content}</p>
+                              </>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              Liked on {new Date(like.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="reshares">
+                <Card>
+                  <CardContent className="p-4">
+                    {myReshares?.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Share2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>You haven't reshared any posts yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {myReshares?.map((reshare: any) => (
+                          <div key={reshare.id} className="p-4 border rounded-lg">
+                            {reshare.comment && (
+                              <p className="text-sm italic mb-2 border-l-2 border-primary pl-3">
+                                "{reshare.comment}"
+                              </p>
+                            )}
+                            {reshare.voices && (
+                              <>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg">{reshare.voices.mood}</span>
+                                  <span className="text-xs px-2 py-1 bg-primary/10 rounded">
+                                    {reshare.voices.category}
+                                  </span>
+                                </div>
+                                <p className="text-sm mb-2">{reshare.voices.content}</p>
+                              </>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              Reshared on {new Date(reshare.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

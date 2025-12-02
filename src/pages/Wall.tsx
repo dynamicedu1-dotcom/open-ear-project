@@ -26,6 +26,8 @@ interface Voice {
   username: string | null;
   support_count: number;
   comment_count: number;
+  image_url?: string;
+  created_at: string;
 }
 
 const Wall = () => {
@@ -225,8 +227,11 @@ const Wall = () => {
                 username={voice.username || undefined}
                 supportCount={voice.support_count}
                 commentCount={voice.comment_count}
+                imageUrl={voice.image_url}
+                createdAt={voice.created_at}
                 onSupport={handleSupport}
                 onClick={handleVoiceClick}
+                onLikeChange={fetchVoices}
               />
             ))}
           </div>
