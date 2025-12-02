@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, X, Home, MessageSquare, Lightbulb, Users, Mail, UserSquare, MessageCircle, LogIn, Shield } from "lucide-react";
+import { Menu, X, Home, MessageSquare, Lightbulb, Users, Mail, UserSquare, MessageCircle, LogIn, Shield, Activity } from "lucide-react";
+import { useIdentity } from "@/hooks/useIdentity";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Navigation = () => {
@@ -10,6 +11,7 @@ export const Navigation = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { isIdentified, getDisplayName } = useIdentity();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -28,7 +30,6 @@ export const Navigation = () => {
   const navLinks = [
     { path: "/", label: "Home", icon: Home },
     { path: "/wall", label: "Opinion Wall", icon: MessageSquare },
-    { path: "/core-team/wall", label: "Core Team", icon: Users },
     { path: "/actions", label: "Actions", icon: Lightbulb },
     { path: "/collaborate", label: "Collaborate", icon: Users },
     { path: "/contact", label: "Contact", icon: Mail },

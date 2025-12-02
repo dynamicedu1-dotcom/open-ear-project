@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Navigation } from "@/components/Navigation";
+import { EmailCaptureModal } from "@/components/EmailCaptureModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send } from "lucide-react";
+import { useIdentity } from "@/hooks/useIdentity";
+import { ArrowLeft, Send, Image, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 const moods = [
@@ -25,7 +27,12 @@ const moods = [
 const Share = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile, isIdentified, requestIdentity, requiresIdentity, cancelIdentityRequest } = useIdentity();
   const [loading, setLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: categories = [] } = useQuery({
     queryKey: ['topics'],
@@ -50,6 +57,46 @@ const Share = () => {
     mood: "",
     consent: false,
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image under 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,9 +137,37 @@ const Share = () => {
       return;
     }
 
+    // Require identity for posting
+    if (!isIdentified) {
+      setShowEmailModal(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
+      let imageUrl = null;
+
+      // Upload image if present
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `voices/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('team-avatars')
+          .upload(filePath, imageFile);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('team-avatars')
+            .getPublicUrl(filePath);
+          imageUrl = publicUrl;
+        }
+      }
+
       const { error } = await supabase.from('voices').insert({
         content: formData.content,
         mood: formData.mood,
@@ -101,6 +176,8 @@ const Share = () => {
         username: formData.isAnonymous ? null : formData.username || null,
         age: formData.age || null,
         location: formData.location || null,
+        image_url: imageUrl,
+        user_profile_id: profile?.id || null,
       });
 
       if (error) throw error;
@@ -121,6 +198,8 @@ const Share = () => {
         mood: "",
         consent: false,
       });
+      setImageFile(null);
+      setImagePreview(null);
 
       setTimeout(() => navigate("/wall"), 1500);
     } catch (error) {
@@ -135,9 +214,23 @@ const Share = () => {
     }
   };
 
+  const handleEmailCaptureSuccess = () => {
+    setShowEmailModal(false);
+    // Re-trigger submit after identity capture
+    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+    handleSubmit(fakeEvent);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      
+      <EmailCaptureModal
+        open={showEmailModal}
+        onOpenChange={setShowEmailModal}
+        onSuccess={handleEmailCaptureSuccess}
+        actionDescription="share your voice"
+      />
       
       <div className="gradient-warm py-12 px-6">
         <div className="max-w-3xl mx-auto">
@@ -248,6 +341,53 @@ const Share = () => {
               <p className="text-xs text-muted-foreground text-right">
                 {formData.content.length} / 900 characters
               </p>
+            </div>
+
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label>Add Image (Optional)</Label>
+              <div className="flex items-center gap-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="gap-2"
+                >
+                  <Image className="h-4 w-4" />
+                  {imageFile ? 'Change Image' : 'Add Image'}
+                </Button>
+                {imageFile && (
+                  <span className="text-sm text-muted-foreground">
+                    {imageFile.name}
+                  </span>
+                )}
+              </div>
+              {imagePreview && (
+                <div className="relative mt-3 inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="max-h-48 rounded-lg"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={removeImage}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Mood Picker */}

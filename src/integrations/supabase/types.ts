@@ -132,7 +132,10 @@ export type Database = {
           created_at: string | null
           id: string
           is_anonymous: boolean | null
+          is_core_team_reply: boolean | null
+          parent_comment_id: string | null
           updated_at: string | null
+          user_profile_id: string | null
           voice_id: string
         }
         Insert: {
@@ -141,7 +144,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_anonymous?: boolean | null
+          is_core_team_reply?: boolean | null
+          parent_comment_id?: string | null
           updated_at?: string | null
+          user_profile_id?: string | null
           voice_id: string
         }
         Update: {
@@ -150,10 +156,27 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_anonymous?: boolean | null
+          is_core_team_reply?: boolean | null
+          parent_comment_id?: string | null
           updated_at?: string | null
+          user_profile_id?: string | null
           voice_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "comments_voice_id_fkey"
             columns: ["voice_id"]
@@ -262,6 +285,80 @@ export type Database = {
         }
         Relationships: []
       }
+      pinned_voices: {
+        Row: {
+          created_at: string | null
+          id: string
+          pin_location: string | null
+          pin_note: string | null
+          pinned_by: string
+          voice_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pin_location?: string | null
+          pin_note?: string | null
+          pinned_by: string
+          voice_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pin_location?: string | null
+          pin_note?: string | null
+          pinned_by?: string
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinned_voices_pinned_by_fkey"
+            columns: ["pinned_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinned_voices_voice_id_fkey"
+            columns: ["voice_id"]
+            isOneToOne: false
+            referencedRelation: "voices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           bio: string | null
@@ -328,6 +425,77 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          target_id: string
+          user_profile_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          target_id: string
+          user_profile_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          target_id?: string
+          user_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_activity_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string
+          id: string
+          is_anonymous: boolean | null
+          is_blocked: boolean | null
+          role: string | null
+          session_token: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          id?: string
+          is_anonymous?: boolean | null
+          is_blocked?: boolean | null
+          role?: string | null
+          session_token?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          id?: string
+          is_anonymous?: boolean | null
+          is_blocked?: boolean | null
+          role?: string | null
+          session_token?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -349,6 +517,81 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_profile_id: string
+          voice_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_profile_id: string
+          voice_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_profile_id?: string
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_likes_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_likes_voice_id_fkey"
+            columns: ["voice_id"]
+            isOneToOne: false
+            referencedRelation: "voices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_reshares: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          user_profile_id: string
+          voice_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          user_profile_id: string
+          voice_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          user_profile_id?: string
+          voice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_reshares_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_reshares_voice_id_fkey"
+            columns: ["voice_id"]
+            isOneToOne: false
+            referencedRelation: "voices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voices: {
         Row: {
           age: string | null
@@ -357,11 +600,16 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           is_anonymous: boolean | null
+          is_hidden: boolean | null
+          likes_count: number | null
           location: string | null
           mood: string
+          reshare_count: number | null
           support_count: number | null
           updated_at: string
+          user_profile_id: string | null
           username: string | null
         }
         Insert: {
@@ -371,11 +619,16 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_anonymous?: boolean | null
+          is_hidden?: boolean | null
+          likes_count?: number | null
           location?: string | null
           mood: string
+          reshare_count?: number | null
           support_count?: number | null
           updated_at?: string
+          user_profile_id?: string | null
           username?: string | null
         }
         Update: {
@@ -385,14 +638,27 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           is_anonymous?: boolean | null
+          is_hidden?: boolean | null
+          likes_count?: number | null
           location?: string | null
           mood?: string
+          reshare_count?: number | null
           support_count?: number | null
           updated_at?: string
+          user_profile_id?: string | null
           username?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "voices_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
