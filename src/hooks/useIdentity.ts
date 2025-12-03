@@ -5,6 +5,7 @@ export interface UserProfile {
   id: string;
   email: string;
   display_name: string | null;
+  unique_id: string | null;
   is_anonymous: boolean;
   role: 'user' | 'core_team' | 'admin';
   is_blocked: boolean;
@@ -163,11 +164,20 @@ export function useIdentity() {
     });
   }, []);
 
-  // Get display name for UI
+  // Get display name for UI - shows unique_id or display_name
   const getDisplayName = useCallback(() => {
     if (!state.profile) return 'Anonymous';
-    if (state.profile.is_anonymous) return state.profile.display_name || 'Anonymous';
-    return state.profile.display_name || state.profile.email.split('@')[0];
+    // If anonymous, show unique_id (like User#1234) or display_name
+    if (state.profile.is_anonymous) {
+      return state.profile.unique_id || state.profile.display_name || 'Anonymous';
+    }
+    // If not anonymous, show display_name or unique_id
+    return state.profile.display_name || state.profile.unique_id || state.profile.email.split('@')[0];
+  }, [state.profile]);
+
+  // Get unique user ID for display
+  const getUserId = useCallback(() => {
+    return state.profile?.unique_id || null;
   }, [state.profile]);
 
   return {
@@ -177,5 +187,6 @@ export function useIdentity() {
     cancelIdentityRequest,
     clearSession,
     getDisplayName,
+    getUserId,
   };
 }
