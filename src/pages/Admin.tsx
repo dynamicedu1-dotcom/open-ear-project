@@ -9,13 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { PartnersManagement } from "@/components/PartnersManagement";
 import { TeamManagement } from "@/components/TeamManagement";
 import { TopicsManagement } from "@/components/TopicsManagement";
 import { FeedbackTypesManagement } from "@/components/FeedbackTypesManagement";
 import { CollaborationOptionsManagement } from "@/components/CollaborationOptionsManagement";
+import { BlogManagement } from "@/components/BlogManagement";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
@@ -214,6 +215,10 @@ export default function Admin() {
                 <FolderTree className="h-4 w-4" />
                 <span className="hidden sm:inline">Collab Options</span>
               </TabsTrigger>
+              <TabsTrigger value="blog" className="flex items-center gap-2 min-h-[44px] px-4">
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Weekly Blog</span>
+              </TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -259,6 +264,10 @@ export default function Admin() {
 
           <TabsContent value="collab-options">
             <CollaborationOptionsManagement />
+          </TabsContent>
+
+          <TabsContent value="blog">
+            <BlogManagement />
           </TabsContent>
         </Tabs>
       </div>

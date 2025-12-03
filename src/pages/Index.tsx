@@ -6,6 +6,7 @@ import { Navigation } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Mic, TrendingUp, Heart, MessageSquare, LogIn, Shield } from "lucide-react";
+import { WeeklyBlogSection } from "@/components/WeeklyBlogSection";
 import { useToast } from "@/hooks/use-toast";
 import VisitorCounter from "@/components/VisitorCounter";
 
@@ -39,14 +40,6 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const categories = [
-    { name: "🎓 Education", value: "Education" },
-    { name: "💭 Dreams", value: "Dreams" },
-    { name: "💔 Pressure", value: "Pressure" },
-    { name: "💪 Skills", value: "Skills" },
-    { name: "🌱 Future", value: "Future" },
-  ];
 
   useEffect(() => {
     fetchVoices();
@@ -175,24 +168,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Explore Topics */}
-      <section className="py-16 px-6 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          🏷️ Explore Topics
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {categories.map((category) => (
-            <Button
-              key={category.value}
-              variant="outline"
-              className="h-auto py-6 text-lg hover:bg-primary/10 hover:border-primary transition-all"
-              onClick={() => navigate(`/wall?category=${category.value}`)}
-            >
-              {category.name}
-            </Button>
-          ))}
-        </div>
-      </section>
+      {/* Weekly Blog Section */}
+      <WeeklyBlogSection />
 
       {/* Trending Voices */}
       <section className="py-16 px-6 bg-card/30 backdrop-blur-sm">

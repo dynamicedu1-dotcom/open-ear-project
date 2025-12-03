@@ -470,6 +470,7 @@ export type Database = {
           is_blocked: boolean | null
           role: string | null
           session_token: string | null
+          unique_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -481,6 +482,7 @@ export type Database = {
           is_blocked?: boolean | null
           role?: string | null
           session_token?: string | null
+          unique_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -492,6 +494,7 @@ export type Database = {
           is_blocked?: boolean | null
           role?: string | null
           session_token?: string | null
+          unique_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -659,6 +662,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weekly_blogs: {
+        Row: {
+          author_name: string | null
+          content: string
+          cover_image_url: string | null
+          created_at: string | null
+          id: string
+          is_published: boolean | null
+          publish_date: string | null
+          summary: string | null
+          title: string
+          updated_at: string | null
+          views_count: number | null
+          week_number: number | null
+        }
+        Insert: {
+          author_name?: string | null
+          content: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          publish_date?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string | null
+          views_count?: number | null
+          week_number?: number | null
+        }
+        Update: {
+          author_name?: string | null
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          publish_date?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string | null
+          views_count?: number | null
+          week_number?: number | null
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -16,6 +16,8 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Team from "./pages/Team";
 import MyActivity from "./pages/MyActivity";
+import Blog from "./pages/Blog";
+import BlogDetail from "./pages/BlogDetail";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/team" element={<Team />} />
           <Route path="/my-activity" element={<MyActivity />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:id" element={<BlogDetail />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
