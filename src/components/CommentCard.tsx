@@ -1,24 +1,108 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Card } from "@/components/ui/card";
-import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, Heart } from "lucide-react";
+import { useIdentity } from "@/hooks/useIdentity";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface CommentCardProps {
   key?: React.Key;
+  id: string;
   authorName: string | null;
   isAnonymous: boolean;
   content: string;
   createdAt: string;
+  likesCount?: number;
+  onLikeChange?: () => void;
 }
 
 export const CommentCard = ({ 
+  id,
   authorName, 
   isAnonymous, 
   content, 
-  createdAt 
+  createdAt,
+  likesCount = 0,
+  onLikeChange,
 }: CommentCardProps) => {
+  const { profile, isIdentified } = useIdentity();
+  const [isLiked, setIsLiked] = useState(false);
+  const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+  const [isLiking, setIsLiking] = useState(false);
+
   const displayName = isAnonymous ? "Anonymous" : (authorName || "Anonymous");
   const timeAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
+
+  // Check if user has liked this comment
+  useEffect(() => {
+    const checkLike = async () => {
+      if (!profile?.id || !id) return;
+      try {
+        const { data } = await supabase
+          .from('comment_likes')
+          .select('id')
+          .eq('comment_id', id)
+          .eq('user_profile_id', profile.id)
+          .maybeSingle();
+        
+        setIsLiked(!!data);
+      } catch (error) {
+        console.error('Error checking like:', error);
+      }
+    };
+    checkLike();
+  }, [profile?.id, id]);
+
+  // Update local count when prop changes
+  useEffect(() => {
+    setLocalLikesCount(likesCount);
+  }, [likesCount]);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isIdentified) {
+      toast.info('Please join to like comments');
+      return;
+    }
+
+    if (!profile?.id || isLiking) return;
+    setIsLiking(true);
+
+    try {
+      if (isLiked) {
+        // Unlike
+        await supabase
+          .from('comment_likes')
+          .delete()
+          .eq('comment_id', id)
+          .eq('user_profile_id', profile.id);
+        
+        setIsLiked(false);
+        setLocalLikesCount(prev => Math.max(0, prev - 1));
+      } else {
+        // Like
+        await supabase
+          .from('comment_likes')
+          .insert({
+            comment_id: id,
+            user_profile_id: profile.id,
+          });
+        
+        setIsLiked(true);
+        setLocalLikesCount(prev => prev + 1);
+      }
+      onLikeChange?.();
+    } catch (error: any) {
+      console.error('Like error:', error);
+      toast.error('Failed to update like');
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   return (
     <Card className="p-4 bg-card/50 border-border/50 hover:bg-card/70 transition-colors animate-fade-in">
@@ -33,6 +117,23 @@ export const CommentCard = ({
             <span className="text-muted-foreground text-xs">{timeAgo}</span>
           </div>
           <p className="text-foreground/90 text-sm leading-relaxed">{content}</p>
+          
+          {/* Like button */}
+          <div className="flex items-center pt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-7 px-2 gap-1.5 text-xs hover:text-red-500",
+                isLiked && "text-red-500"
+              )}
+              onClick={handleLike}
+              disabled={isLiking}
+            >
+              <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current")} />
+              {localLikesCount > 0 && <span>{localLikesCount}</span>}
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
