@@ -3,12 +3,13 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VoiceCard } from "@/components/VoiceCard";
+import { ResharedVoiceCard } from "@/components/ResharedVoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
 import { VoiceDetailDialog } from "@/components/VoiceDetailDialog";
 import { Navigation } from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Search, Filter } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -26,8 +27,22 @@ interface Voice {
   username: string | null;
   support_count: number;
   comment_count: number;
+  likes_count?: number;
+  reshare_count?: number;
   image_url?: string;
   created_at: string;
+}
+
+interface Reshare {
+  id: string;
+  voice_id: string;
+  comment: string | null;
+  created_at: string;
+  user_profile: {
+    display_name: string | null;
+    unique_id: string | null;
+  } | null;
+  voice: Voice;
 }
 
 const Wall = () => {
@@ -35,6 +50,7 @@ const Wall = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [voices, setVoices] = useState<Voice[]>([]);
+  const [reshares, setReshares] = useState<Reshare[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState(
@@ -47,7 +63,7 @@ const Wall = () => {
 
   useEffect(() => {
     fetchVoices();
-
+    fetchReshares();
     const channel = supabase
       .channel('wall-voices')
       .on(
@@ -61,12 +77,48 @@ const Wall = () => {
           fetchVoices();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'voice_reshares'
+        },
+        () => {
+          fetchReshares();
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [categoryFilter, moodFilter, searchQuery]);
+
+  const fetchReshares = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voice_reshares')
+        .select(`
+          id,
+          voice_id,
+          comment,
+          created_at,
+          user_profile:user_profiles!voice_reshares_user_profile_id_fkey(display_name, unique_id),
+          voice:voices!voice_reshares_voice_id_fkey(*)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+      
+      // Filter reshares to only include valid ones with voice data
+      const validReshares = (data || []).filter((r: any) => r.voice) as Reshare[];
+      setReshares(validReshares);
+    } catch (error) {
+      console.error('Error fetching reshares:', error);
+    }
+  };
 
   const fetchVoices = async () => {
     setLoading(true);
@@ -199,6 +251,40 @@ const Wall = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Reshares Section */}
+        {reshares.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl font-semibold mb-4 text-foreground/90">Recently Reshared</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {reshares.slice(0, 6).map((reshare) => (
+                <ResharedVoiceCard
+                  key={reshare.id}
+                  reshareId={reshare.id}
+                  resharedByName={reshare.user_profile?.display_name || "Someone"}
+                  resharedByUniqueId={reshare.user_profile?.unique_id || null}
+                  reshareComment={reshare.comment}
+                  resharedAt={reshare.created_at}
+                  voiceId={reshare.voice.id}
+                  content={reshare.voice.content}
+                  mood={reshare.voice.mood}
+                  category={reshare.voice.category}
+                  isAnonymous={reshare.voice.is_anonymous}
+                  username={reshare.voice.username || undefined}
+                  supportCount={reshare.voice.support_count || 0}
+                  commentCount={reshare.voice.comment_count || 0}
+                  likesCount={reshare.voice.likes_count || 0}
+                  reshareCount={reshare.voice.reshare_count || 0}
+                  imageUrl={reshare.voice.image_url}
+                  createdAt={reshare.voice.created_at}
+                  onClick={handleVoiceClick}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Main Voices */}
+        <h2 className="text-xl font-semibold mb-4 text-foreground/90">All Voices</h2>
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (

@@ -2,16 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, X, Home, MessageSquare, Lightbulb, Users, Mail, UserSquare, MessageCircle, LogIn, Shield, Activity } from "lucide-react";
-import { useIdentity } from "@/hooks/useIdentity";
+import { Menu, X, Home, MessageSquare, Lightbulb, Users, Mail, UserSquare, MessageCircle, LogIn, Shield, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ProfileDropdown } from "./ProfileDropdown";
 
 export const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const { isIdentified, getDisplayName } = useIdentity();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -30,9 +29,9 @@ export const Navigation = () => {
   const navLinks = [
     { path: "/", label: "Home", icon: Home },
     { path: "/wall", label: "Opinion Wall", icon: MessageSquare },
+    { path: "/blog", label: "Blog", icon: BookOpen },
     { path: "/actions", label: "Actions", icon: Lightbulb },
     { path: "/collaborate", label: "Collaborate", icon: Users },
-    { path: "/contact", label: "Contact", icon: Mail },
     { path: "/team", label: "Team", icon: UserSquare },
     { path: "/feedback", label: "Feedback", icon: MessageCircle },
   ];
@@ -72,25 +71,19 @@ export const Navigation = () => {
             ))}
           </div>
 
-          <div>
-            <Button
-              variant={user ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleNavigate(user ? "/admin" : "/auth")}
-              className="gap-2"
-            >
-              {user ? (
-                <>
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </>
-              ) : (
-                <>
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </>
-              )}
-            </Button>
+          <div className="flex items-center gap-2">
+            <ProfileDropdown />
+            {user && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleNavigate("/admin")}
+                className="gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Button>
+            )}
           </div>
         </div>
 
@@ -139,25 +132,19 @@ export const Navigation = () => {
                   ))}
                 </div>
 
-                {/* Auth Section */}
-                <div className="p-4 border-t border-border">
-                  <Button
-                    variant={user ? "default" : "outline"}
-                    className="w-full gap-2 h-12"
-                    onClick={() => handleNavigate(user ? "/admin" : "/auth")}
-                  >
-                    {user ? (
-                      <>
-                        <Shield className="h-5 w-5" />
-                        Admin Panel
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="h-5 w-5" />
-                        Sign In
-                      </>
-                    )}
-                  </Button>
+                {/* Profile & Auth Section */}
+                <div className="p-4 border-t border-border space-y-2">
+                  <ProfileDropdown />
+                  {user && (
+                    <Button
+                      variant="default"
+                      className="w-full gap-2 h-12"
+                      onClick={() => handleNavigate("/admin")}
+                    >
+                      <Shield className="h-5 w-5" />
+                      Admin Panel
+                    </Button>
+                  )}
                 </div>
               </div>
             </SheetContent>

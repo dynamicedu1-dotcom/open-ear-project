@@ -125,6 +125,42 @@ export type Database = {
         }
         Relationships: []
       }
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string | null
+          id: string
+          user_profile_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string | null
+          id?: string
+          user_profile_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string | null
+          id?: string
+          user_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comment_likes_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           author_name: string | null
@@ -133,6 +169,7 @@ export type Database = {
           id: string
           is_anonymous: boolean | null
           is_core_team_reply: boolean | null
+          likes_count: number | null
           parent_comment_id: string | null
           updated_at: string | null
           user_profile_id: string | null
@@ -145,6 +182,7 @@ export type Database = {
           id?: string
           is_anonymous?: boolean | null
           is_core_team_reply?: boolean | null
+          likes_count?: number | null
           parent_comment_id?: string | null
           updated_at?: string | null
           user_profile_id?: string | null
@@ -157,6 +195,7 @@ export type Database = {
           id?: string
           is_anonymous?: boolean | null
           is_core_team_reply?: boolean | null
+          likes_count?: number | null
           parent_comment_id?: string | null
           updated_at?: string | null
           user_profile_id?: string | null

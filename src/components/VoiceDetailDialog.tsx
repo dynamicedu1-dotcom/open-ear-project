@@ -31,6 +31,7 @@ interface Comment {
   author_name: string | null;
   is_anonymous: boolean;
   created_at: string;
+  likes_count: number;
 }
 
 interface VoiceDetailDialogProps {
@@ -243,10 +244,13 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
                     {comments.map((comment) => (
                       <CommentCard
                         key={comment.id}
+                        id={comment.id}
                         authorName={comment.author_name}
                         isAnonymous={comment.is_anonymous}
                         content={comment.content}
                         createdAt={comment.created_at}
+                        likesCount={comment.likes_count || 0}
+                        onLikeChange={fetchComments}
                       />
                     ))}
                   </div>
