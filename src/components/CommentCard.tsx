@@ -7,6 +7,7 @@ import { useIdentity } from "@/hooks/useIdentity";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { EmailCaptureModal } from "./EmailCaptureModal";
 
 interface CommentCardProps {
   key?: React.Key;
@@ -28,10 +29,12 @@ export const CommentCard = ({
   likesCount = 0,
   onLikeChange,
 }: CommentCardProps) => {
-  const { profile, isIdentified } = useIdentity();
+  const { profile, isIdentified, requestIdentity, requiresIdentity, cancelIdentityRequest } = useIdentity();
   const [isLiked, setIsLiked] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
   const [isLiking, setIsLiking] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [pendingLike, setPendingLike] = useState(false);
 
   const displayName = isAnonymous ? "Anonymous" : (authorName || "Anonymous");
   const timeAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
@@ -61,14 +64,15 @@ export const CommentCard = ({
     setLocalLikesCount(likesCount);
   }, [likesCount]);
 
-  const handleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!isIdentified) {
-      toast.info('Please join to like comments');
-      return;
+  // Handle like after email capture
+  useEffect(() => {
+    if (pendingLike && isIdentified && profile?.id) {
+      setPendingLike(false);
+      performLike();
     }
+  }, [pendingLike, isIdentified, profile?.id]);
 
+  const performLike = async () => {
     if (!profile?.id || isLiking) return;
     setIsLiking(true);
 
@@ -104,38 +108,63 @@ export const CommentCard = ({
     }
   };
 
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isIdentified) {
+      setShowEmailModal(true);
+      return;
+    }
+
+    performLike();
+  };
+
+  const handleEmailCaptureSuccess = () => {
+    setShowEmailModal(false);
+    setPendingLike(true);
+  };
+
   return (
-    <Card className="p-4 bg-card/50 border-border/50 hover:bg-card/70 transition-colors animate-fade-in">
-      <div className="flex items-start gap-3">
-        <div className="p-2 bg-primary/10 rounded-full">
-          <User className="h-4 w-4 text-primary" />
-        </div>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-foreground">{displayName}</span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground text-xs">{timeAgo}</span>
+    <>
+      <EmailCaptureModal
+        open={showEmailModal}
+        onOpenChange={setShowEmailModal}
+        onSuccess={handleEmailCaptureSuccess}
+        actionDescription="like this comment"
+      />
+      
+      <Card className="p-4 bg-card/50 border-border/50 hover:bg-card/70 transition-colors animate-fade-in">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-primary/10 rounded-full">
+            <User className="h-4 w-4 text-primary" />
           </div>
-          <p className="text-foreground/90 text-sm leading-relaxed">{content}</p>
-          
-          {/* Like button */}
-          <div className="flex items-center pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-7 px-2 gap-1.5 text-xs hover:text-red-500",
-                isLiked && "text-red-500"
-              )}
-              onClick={handleLike}
-              disabled={isLiking}
-            >
-              <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current")} />
-              {localLikesCount > 0 && <span>{localLikesCount}</span>}
-            </Button>
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium text-foreground">{displayName}</span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground text-xs">{timeAgo}</span>
+            </div>
+            <p className="text-foreground/90 text-sm leading-relaxed">{content}</p>
+            
+            {/* Like button */}
+            <div className="flex items-center pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-7 px-2 gap-1.5 text-xs hover:text-red-500",
+                  isLiked && "text-red-500"
+                )}
+                onClick={handleLike}
+                disabled={isLiking}
+              >
+                <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current")} />
+                {localLikesCount > 0 && <span>{localLikesCount}</span>}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </>
   );
 };

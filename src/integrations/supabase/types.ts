@@ -435,6 +435,8 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          panel_enabled: boolean | null
+          panel_password: string | null
           phone: string
           profile_image: string | null
           role: string
@@ -448,6 +450,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          panel_enabled?: boolean | null
+          panel_password?: string | null
           phone: string
           profile_image?: string | null
           role: string
@@ -461,6 +465,8 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          panel_enabled?: boolean | null
+          panel_password?: string | null
           phone?: string
           profile_image?: string | null
           role?: string

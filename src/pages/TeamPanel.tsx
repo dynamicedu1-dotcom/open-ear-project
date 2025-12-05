@@ -1,14 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   Eye,
@@ -17,70 +31,79 @@ import {
   Share2,
   Pin,
   TrendingUp,
-  LogIn,
   Shield,
+  Clock,
 } from "lucide-react";
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  panel_enabled: boolean;
+  panel_password: string | null;
+}
 
 export default function TeamPanel() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [teamMember, setTeamMember] = useState<any>(null);
-  const [email, setEmail] = useState("");
+  const [showLoginDialog, setShowLoginDialog] = useState(true);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+  const [teamMember, setTeamMember] = useState<TeamMember | null>(null);
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [timeRange, setTimeRange] = useState<"7" | "30" | "90">("7");
 
-  // Check existing auth session
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Check if user is a team member
-        const { data: member } = await supabase
-          .from("team_members")
-          .select("*")
-          .eq("email", session.user.email)
-          .eq("is_active", true)
-          .maybeSingle();
+  // Fetch team members with panel access enabled
+  const { data: teamMembers } = useQuery({
+    queryKey: ["teamMembersWithPanel"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_members")
+        .select("id, name, role, email, panel_enabled, panel_password")
+        .eq("panel_enabled", true)
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as TeamMember[];
+    },
+  });
 
-        if (member) {
-          setTeamMember(member);
-          setIsAuthenticated(true);
-        }
-      }
-    };
-    checkAuth();
-  }, []);
+  const handleLogin = async () => {
+    if (!selectedMemberId) {
+      toast.error("Please select your name");
+      return;
+    }
+    if (!password) {
+      toast.error("Please enter your password");
+      return;
+    }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // Verify team member
-      const { data: member } = await supabase
-        .from("team_members")
-        .select("*")
-        .eq("email", email)
-        .eq("is_active", true)
-        .maybeSingle();
-
+      const member = teamMembers?.find(m => m.id === selectedMemberId);
+      
       if (!member) {
-        await supabase.auth.signOut();
-        toast.error("You are not authorized as a team member");
+        toast.error("Team member not found");
+        return;
+      }
+
+      if (!member.panel_password) {
+        toast.error("No password set. Contact admin.");
+        return;
+      }
+
+      if (password !== member.panel_password) {
+        toast.error("Incorrect password");
         return;
       }
 
       setTeamMember(member);
       setIsAuthenticated(true);
-      toast.success(`Welcome back, ${member.name}!`);
+      setShowLoginDialog(false);
+      toast.success(`Welcome, ${member.name}!`);
     } catch (error: any) {
       toast.error(error.message || "Login failed");
     } finally {
@@ -92,11 +115,13 @@ export default function TeamPanel() {
   const { data: metrics } = useQuery({
     queryKey: ["teamMetrics", teamMember?.id, timeRange],
     queryFn: async () => {
+      if (!teamMember) return null;
+      
       const daysAgo = new Date();
       daysAgo.setDate(daysAgo.getDate() - parseInt(timeRange));
 
-      // Get voices with comments from this team member
-      const { data: comments, error: commentsError } = await supabase
+      // Get comments by this team member (core team replies)
+      const { data: comments } = await supabase
         .from("comments")
         .select("*, voices(*)")
         .eq("is_core_team_reply", true)
@@ -108,7 +133,7 @@ export default function TeamPanel() {
         .select("*, voices(*)")
         .gte("created_at", daysAgo.toISOString());
 
-      // Get total engagement on posts team interacted with
+      // Calculate engagement on posts team interacted with
       let totalLikes = 0;
       let totalComments = 0;
       let totalReshares = 0;
@@ -116,7 +141,7 @@ export default function TeamPanel() {
       if (comments) {
         comments.forEach((c: any) => {
           if (c.voices) {
-            totalLikes += c.voices.likes_count || 0;
+            totalLikes += (c.voices.likes_count || 0) + (c.voices.support_count || 0);
             totalComments += c.voices.comment_count || 0;
             totalReshares += c.voices.reshare_count || 0;
           }
@@ -160,48 +185,92 @@ export default function TeamPanel() {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
-        <div className="container mx-auto p-4 md:p-8 max-w-md">
-          <Card>
-            <CardHeader className="text-center">
+        
+        <Dialog open={showLoginDialog} onOpenChange={(open) => {
+          if (!open && !isAuthenticated) {
+            navigate("/");
+          }
+          setShowLoginDialog(open);
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle>Team Panel Login</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Access restricted to Dynamic Edu team members
-              </p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@dynamicedu.com"
-                    required
-                  />
-                </div>
-                <div>
+              <DialogTitle className="text-center">Team Panel Login</DialogTitle>
+              <DialogDescription className="text-center">
+                Select your name and enter the password set by admin
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Select Your Name</Label>
+                <Select
+                  value={selectedMemberId}
+                  onValueChange={setSelectedMemberId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team member..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers?.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name} - {member.role}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedMemberId && (
+                <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
+                    placeholder="Enter your panel password"
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  <LogIn className="h-4 w-4 mr-2" />
-                  {isLoading ? "Signing in..." : "Sign In"}
-                </Button>
-              </form>
+              )}
+
+              <Button
+                className="w-full"
+                onClick={handleLogin}
+                disabled={!selectedMemberId || !password || isLoading}
+              >
+                {isLoading ? "Signing in..." : "Login to Panel"}
+              </Button>
+
+              {(!teamMembers || teamMembers.length === 0) && (
+                <p className="text-sm text-muted-foreground text-center">
+                  No team members with panel access enabled. Contact admin.
+                </p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <div className="container mx-auto p-8 flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle>Team Panel</CardTitle>
+              <CardDescription>
+                Access restricted to Dynamic Edu team members
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setShowLoginDialog(true)} className="w-full">
+                Login to Panel
+              </Button>
               <p className="text-xs text-muted-foreground text-center mt-4">
-                Contact admin if you need access credentials
+                Contact admin if you need panel access
               </p>
             </CardContent>
           </Card>
@@ -215,7 +284,7 @@ export default function TeamPanel() {
       <Navigation />
       <div className="container mx-auto p-4 md:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/wall")}>
               <ArrowLeft className="h-5 w-5" />
@@ -229,10 +298,12 @@ export default function TeamPanel() {
           </div>
           <Button
             variant="outline"
-            onClick={async () => {
-              await supabase.auth.signOut();
+            onClick={() => {
               setIsAuthenticated(false);
               setTeamMember(null);
+              setPassword("");
+              setSelectedMemberId("");
+              setShowLoginDialog(true);
             }}
           >
             Sign Out
@@ -314,18 +385,18 @@ export default function TeamPanel() {
 
         {/* Content Tabs */}
         <Tabs defaultValue="trending">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 w-full justify-start overflow-x-auto">
             <TabsTrigger value="trending">
               <TrendingUp className="h-4 w-4 mr-2" />
-              Top Student Posts
+              <span className="hidden sm:inline">Top Posts</span>
             </TabsTrigger>
             <TabsTrigger value="responses">
               <MessageCircle className="h-4 w-4 mr-2" />
-              My Responses
+              <span className="hidden sm:inline">Responses</span>
             </TabsTrigger>
             <TabsTrigger value="pinned">
               <Pin className="h-4 w-4 mr-2" />
-              Pinned Posts
+              <span className="hidden sm:inline">Pinned</span>
             </TabsTrigger>
           </TabsList>
 
