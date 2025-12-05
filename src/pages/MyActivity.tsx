@@ -272,7 +272,7 @@ export default function MyActivity() {
                     ) : (
                       <div className="space-y-4">
                         {myPosts?.map((post: any) => (
-                          <div key={post.id} className="p-4 border rounded-lg group">
+                          <div key={post.id} className="p-4 border rounded-lg">
                             <div className="flex items-start justify-between">
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-lg">{post.mood}</span>
@@ -283,7 +283,7 @@ export default function MyActivity() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => confirmDelete("post", post.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -314,13 +314,13 @@ export default function MyActivity() {
                     ) : (
                       <div className="space-y-4">
                         {myComments?.map((comment: any) => (
-                          <div key={comment.id} className="p-4 border rounded-lg group">
-                            <div className="flex items-start justify-between">
+                          <div key={comment.id} className="p-4 border rounded-lg">
+                            <div className="flex items-start justify-between gap-2">
                               <p className="text-sm mb-2 flex-1">{comment.content}</p>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
                                 onClick={() => confirmDelete("comment", comment.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -387,8 +387,8 @@ export default function MyActivity() {
                     ) : (
                       <div className="space-y-4">
                         {myReshares?.map((reshare: any) => (
-                          <div key={reshare.id} className="p-4 border rounded-lg group">
-                            <div className="flex items-start justify-between">
+                          <div key={reshare.id} className="p-4 border rounded-lg">
+                            <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
                                 {reshare.comment && (
                                   <p className="text-sm italic mb-2 border-l-2 border-primary pl-3">
@@ -399,7 +399,7 @@ export default function MyActivity() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
                                 onClick={() => confirmDelete("reshare", reshare.id)}
                               >
                                 <Trash2 className="h-4 w-4" />

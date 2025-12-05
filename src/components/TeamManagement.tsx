@@ -26,6 +26,8 @@ export function TeamManagement() {
     bio: "",
     is_active: true,
     display_order: 0,
+    panel_enabled: false,
+    panel_password: "",
   });
 
   const { data: teamMembers, refetch } = useQuery({
@@ -101,6 +103,8 @@ export function TeamManagement() {
       bio: member.bio || "",
       is_active: member.is_active,
       display_order: member.display_order,
+      panel_enabled: member.panel_enabled || false,
+      panel_password: member.panel_password || "",
     });
     setDialogOpen(true);
   };
@@ -116,6 +120,8 @@ export function TeamManagement() {
       bio: "",
       is_active: true,
       display_order: 0,
+      panel_enabled: false,
+      panel_password: "",
     });
   };
 
@@ -362,6 +368,35 @@ export function TeamManagement() {
                 />
                 <Label htmlFor="is_active">Active (shown on website)</Label>
               </div>
+              
+              {/* Team Panel Access Section */}
+              <div className="border-t pt-4 mt-4 space-y-4">
+                <h4 className="font-medium text-sm">Team Panel Access</h4>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="panel_enabled"
+                    checked={formData.panel_enabled}
+                    onCheckedChange={(checked) => setFormData({ ...formData, panel_enabled: checked })}
+                  />
+                  <Label htmlFor="panel_enabled">Enable Team Panel Access</Label>
+                </div>
+                {formData.panel_enabled && (
+                  <div className="space-y-2">
+                    <Label htmlFor="panel_password">Panel Login Password</Label>
+                    <Input
+                      id="panel_password"
+                      type="password"
+                      value={formData.panel_password}
+                      onChange={(e) => setFormData({ ...formData, panel_password: e.target.value })}
+                      placeholder="Set password for team panel login"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This password will be used by the team member to login to their Team Panel
+                    </p>
+                  </div>
+                )}
+              </div>
+              
               <Button type="submit" className="w-full">
                 {editingMember ? "Update Team Member" : "Add Team Member"}
               </Button>

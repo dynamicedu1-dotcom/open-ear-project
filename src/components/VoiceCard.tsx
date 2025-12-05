@@ -174,6 +174,8 @@ export const VoiceCard = ({
         onOpenChange={setShowShareModal}
         voiceId={id}
         voiceContent={content}
+        voiceMood={moodEmojis[mood]}
+        voiceCategory={category}
         onReshareSuccess={onLikeChange}
       />
 
