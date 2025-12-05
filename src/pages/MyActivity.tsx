@@ -4,16 +4,33 @@ import { Navigation } from "@/components/Navigation";
 import { useIdentity } from "@/hooks/useIdentity";
 import { EmailCaptureModal } from "@/components/EmailCaptureModal";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageCircle, Heart, Share2, User } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, MessageCircle, Heart, Share2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function MyActivity() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { profile, isIdentified, isLoading, requestIdentity, requiresIdentity, cancelIdentityRequest } = useIdentity();
   const [activeTab, setActiveTab] = useState("posts");
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    type: "post" | "comment" | "reshare" | null;
+    id: string | null;
+  }>({ open: false, type: null, id: null });
 
   // Request identity if not identified
   useEffect(() => {
@@ -23,7 +40,7 @@ export default function MyActivity() {
   }, [isLoading, isIdentified, requestIdentity]);
 
   // Fetch user's posts
-  const { data: myPosts } = useQuery({
+  const { data: myPosts, refetch: refetchPosts } = useQuery({
     queryKey: ["myPosts", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -57,7 +74,7 @@ export default function MyActivity() {
   });
 
   // Fetch user's comments
-  const { data: myComments } = useQuery({
+  const { data: myComments, refetch: refetchComments } = useQuery({
     queryKey: ["myComments", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -74,7 +91,7 @@ export default function MyActivity() {
   });
 
   // Fetch user's reshares
-  const { data: myReshares } = useQuery({
+  const { data: myReshares, refetch: refetchReshares } = useQuery({
     queryKey: ["myReshares", profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -89,6 +106,57 @@ export default function MyActivity() {
     },
     enabled: !!profile?.id,
   });
+
+  const handleDelete = async () => {
+    if (!deleteDialog.type || !deleteDialog.id) return;
+
+    try {
+      let error;
+      
+      if (deleteDialog.type === "post") {
+        ({ error } = await supabase
+          .from("voices")
+          .delete()
+          .eq("id", deleteDialog.id)
+          .eq("user_profile_id", profile?.id));
+        if (!error) {
+          refetchPosts();
+          toast.success("Post deleted");
+        }
+      } else if (deleteDialog.type === "comment") {
+        ({ error } = await supabase
+          .from("comments")
+          .delete()
+          .eq("id", deleteDialog.id)
+          .eq("user_profile_id", profile?.id));
+        if (!error) {
+          refetchComments();
+          toast.success("Comment deleted");
+        }
+      } else if (deleteDialog.type === "reshare") {
+        ({ error } = await supabase
+          .from("voice_reshares")
+          .delete()
+          .eq("id", deleteDialog.id)
+          .eq("user_profile_id", profile?.id));
+        if (!error) {
+          refetchReshares();
+          toast.success("Reshare removed");
+        }
+      }
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete");
+    } finally {
+      setDeleteDialog({ open: false, type: null, id: null });
+    }
+  };
+
+  const confirmDelete = (type: "post" | "comment" | "reshare", id: string) => {
+    setDeleteDialog({ open: true, type, id });
+  };
 
   if (isLoading) {
     return (
@@ -108,6 +176,23 @@ export default function MyActivity() {
         actionDescription="view your activity"
       />
 
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your {deleteDialog.type}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="container mx-auto p-4 md:p-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -117,7 +202,7 @@ export default function MyActivity() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">My Activity</h1>
             <p className="text-sm text-muted-foreground">
-              {profile?.is_anonymous ? "Anonymous" : profile?.display_name || profile?.email?.split("@")[0]}
+              {profile?.unique_id || (profile?.is_anonymous ? "Anonymous" : profile?.display_name || profile?.email?.split("@")[0])}
             </p>
           </div>
         </div>
@@ -166,7 +251,7 @@ export default function MyActivity() {
 
             {/* Activity Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 w-full justify-start overflow-x-auto">
                 <TabsTrigger value="posts">My Posts</TabsTrigger>
                 <TabsTrigger value="comments">My Comments</TabsTrigger>
                 <TabsTrigger value="likes">Liked Posts</TabsTrigger>
@@ -187,16 +272,26 @@ export default function MyActivity() {
                     ) : (
                       <div className="space-y-4">
                         {myPosts?.map((post: any) => (
-                          <div key={post.id} className="p-4 border rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-lg">{post.mood}</span>
-                              <span className="text-xs px-2 py-1 bg-primary/10 rounded">
-                                {post.category}
-                              </span>
+                          <div key={post.id} className="p-4 border rounded-lg group">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-lg">{post.mood}</span>
+                                <span className="text-xs px-2 py-1 bg-primary/10 rounded">
+                                  {post.category}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => confirmDelete("post", post.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                             <p className="text-sm mb-2">{post.content}</p>
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>❤️ {post.support_count}</span>
+                              <span>❤️ {post.support_count + (post.likes_count || 0)}</span>
                               <span>💬 {post.comment_count}</span>
                               <span>{new Date(post.created_at).toLocaleDateString()}</span>
                             </div>
@@ -219,9 +314,24 @@ export default function MyActivity() {
                     ) : (
                       <div className="space-y-4">
                         {myComments?.map((comment: any) => (
-                          <div key={comment.id} className="p-4 border rounded-lg">
-                            <p className="text-sm mb-2">{comment.content}</p>
-                            <p className="text-xs text-muted-foreground">
+                          <div key={comment.id} className="p-4 border rounded-lg group">
+                            <div className="flex items-start justify-between">
+                              <p className="text-sm mb-2 flex-1">{comment.content}</p>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => confirmDelete("comment", comment.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            {comment.voices && (
+                              <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded mt-2 line-clamp-2">
+                                On: {comment.voices.content}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-2">
                               {new Date(comment.created_at).toLocaleDateString()}
                             </p>
                           </div>
@@ -277,12 +387,24 @@ export default function MyActivity() {
                     ) : (
                       <div className="space-y-4">
                         {myReshares?.map((reshare: any) => (
-                          <div key={reshare.id} className="p-4 border rounded-lg">
-                            {reshare.comment && (
-                              <p className="text-sm italic mb-2 border-l-2 border-primary pl-3">
-                                "{reshare.comment}"
-                              </p>
-                            )}
+                          <div key={reshare.id} className="p-4 border rounded-lg group">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                {reshare.comment && (
+                                  <p className="text-sm italic mb-2 border-l-2 border-primary pl-3">
+                                    "{reshare.comment}"
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => confirmDelete("reshare", reshare.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                             {reshare.voices && (
                               <>
                                 <div className="flex items-center gap-2 mb-2">

@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useIdentity } from "@/hooks/useIdentity";
 import { EmailCaptureModal } from "./EmailCaptureModal";
+import { ShareModal } from "./ShareModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -59,10 +60,11 @@ export const VoiceCard = ({
 }: VoiceCardProps) => {
   const { profile, isIdentified } = useIdentity();
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState(0);
   const [isLiking, setIsLiking] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'like' | 'reshare' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'like' | null>(null);
 
   const displayContent = content.length > 150 ? content.substring(0, 150) + "..." : content;
   const displayName = isAnonymous ? "Anonymous" : username || "Student";
@@ -99,20 +101,21 @@ export const VoiceCard = ({
     fetchLikesCount();
   }, [profile?.id, id]);
 
-  const handleAction = (action: 'like' | 'reshare', e: React.MouseEvent) => {
+  const handleLikeAction = (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!isIdentified) {
-      setPendingAction(action);
+      setPendingAction('like');
       setShowEmailModal(true);
       return;
     }
 
-    if (action === 'like') {
-      handleLike();
-    } else {
-      handleReshare();
-    }
+    handleLike();
+  };
+
+  const handleShareAction = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowShareModal(true);
   };
 
   const handleLike = async () => {
@@ -149,35 +152,10 @@ export const VoiceCard = ({
     }
   };
 
-  const handleReshare = async () => {
-    if (!profile?.id) return;
-
-    try {
-      await supabase
-        .from('voice_reshares')
-        .insert({
-          voice_id: id,
-          user_profile_id: profile.id,
-        });
-      
-      toast.success('Voice reshared!');
-      onLikeChange?.();
-    } catch (error: any) {
-      if (error.code === '23505') {
-        toast.info('You already reshared this voice');
-      } else {
-        console.error('Reshare error:', error);
-        toast.error('Failed to reshare');
-      }
-    }
-  };
-
   const handleEmailCaptureSuccess = () => {
     setShowEmailModal(false);
     if (pendingAction === 'like') {
       handleLike();
-    } else if (pendingAction === 'reshare') {
-      handleReshare();
     }
     setPendingAction(null);
   };
@@ -188,7 +166,15 @@ export const VoiceCard = ({
         open={showEmailModal}
         onOpenChange={setShowEmailModal}
         onSuccess={handleEmailCaptureSuccess}
-        actionDescription={pendingAction === 'like' ? 'like this post' : 'reshare this post'}
+        actionDescription="like this post"
+      />
+
+      <ShareModal
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
+        voiceId={id}
+        voiceContent={content}
+        onReshareSuccess={onLikeChange}
       />
 
       <Card
@@ -241,7 +227,7 @@ export const VoiceCard = ({
                 "h-8 gap-1.5 hover:text-red-500 hover:bg-red-500/10",
                 isLiked && "text-red-500"
               )}
-              onClick={(e) => handleAction('like', e)}
+              onClick={handleLikeAction}
               disabled={isLiking}
             >
               <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
@@ -265,7 +251,7 @@ export const VoiceCard = ({
               variant="ghost"
               size="sm"
               className="h-8 gap-1.5 hover:text-green-500 hover:bg-green-500/10"
-              onClick={(e) => handleAction('reshare', e)}
+              onClick={handleShareAction}
             >
               <Share2 className="h-4 w-4" />
             </Button>
