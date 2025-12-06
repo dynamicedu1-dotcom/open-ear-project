@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, X, Home, MessageSquare, Lightbulb, Users, Mail, UserSquare, MessageCircle, LogIn, Shield, BookOpen } from "lucide-react";
+import { Menu, X, Home, MessageSquare, Lightbulb, Users, UserSquare, MessageCircle, Shield, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileDropdown } from "./ProfileDropdown";
 
@@ -73,6 +73,15 @@ export const Navigation = () => {
 
           <div className="flex items-center gap-2">
             <ProfileDropdown />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleNavigate("/team-panel")}
+              className="gap-2"
+            >
+              <Shield className="h-4 w-4" />
+              Team Panel
+            </Button>
             {user && (
               <Button
                 variant="default"
@@ -135,6 +144,14 @@ export const Navigation = () => {
                 {/* Profile & Auth Section */}
                 <div className="p-4 border-t border-border space-y-2">
                   <ProfileDropdown />
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 h-12"
+                    onClick={() => handleNavigate("/team-panel")}
+                  >
+                    <Shield className="h-5 w-5" />
+                    Team Panel
+                  </Button>
                   {user && (
                     <Button
                       variant="default"

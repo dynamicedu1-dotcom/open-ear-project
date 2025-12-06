@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Edit, Trash2, Eye, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Calendar, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface BlogPost {
@@ -37,6 +37,10 @@ export function BlogManagement() {
     is_published: false,
     publish_date: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: blogs, refetch } = useQuery({
     queryKey: ["adminBlogs"],
@@ -62,6 +66,8 @@ export function BlogManagement() {
       publish_date: "",
     });
     setEditingBlog(null);
+    setImageFile(null);
+    setImagePreview(null);
   };
 
   const handleEdit = (blog: BlogPost) => {
@@ -75,6 +81,7 @@ export function BlogManagement() {
       is_published: blog.is_published,
       publish_date: blog.publish_date || "",
     });
+    setImagePreview(blog.cover_image_url || null);
     setDialogOpen(true);
   };
 
@@ -89,44 +96,85 @@ export function BlogManagement() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      setFormData({ ...formData, cover_image_url: "" }); // Clear URL since using file
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData({ ...formData, cover_image_url: "" });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsUploading(true);
 
-    const payload = {
-      title: formData.title,
-      content: formData.content,
-      summary: formData.summary || null,
-      cover_image_url: formData.cover_image_url || null,
-      author_name: formData.author_name || "Dynamic Edu",
-      is_published: formData.is_published,
-      publish_date: formData.publish_date || null,
-    };
+    try {
+      let coverImageUrl = formData.cover_image_url;
 
-    if (editingBlog) {
-      const { error } = await supabase
-        .from("weekly_blogs")
-        .update(payload)
-        .eq("id", editingBlog.id);
+      // Upload image if file selected
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `blog-cover-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("blog-images")
+          .upload(fileName, imageFile);
 
-      if (error) {
-        toast.error("Failed to update blog post");
-      } else {
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("blog-images")
+          .getPublicUrl(fileName);
+        
+        coverImageUrl = urlData.publicUrl;
+      }
+
+      const payload = {
+        title: formData.title,
+        content: formData.content,
+        summary: formData.summary || null,
+        cover_image_url: coverImageUrl || null,
+        author_name: formData.author_name || "Dynamic Edu",
+        is_published: formData.is_published,
+        publish_date: formData.publish_date || null,
+      };
+
+      if (editingBlog) {
+        const { error } = await supabase
+          .from("weekly_blogs")
+          .update(payload)
+          .eq("id", editingBlog.id);
+
+        if (error) throw error;
         toast.success("Blog post updated successfully");
-        setDialogOpen(false);
-        resetForm();
-        refetch();
-      }
-    } else {
-      const { error } = await supabase.from("weekly_blogs").insert([payload]);
-
-      if (error) {
-        toast.error("Failed to create blog post");
       } else {
+        const { error } = await supabase.from("weekly_blogs").insert([payload]);
+
+        if (error) throw error;
         toast.success("Blog post created successfully");
-        setDialogOpen(false);
-        resetForm();
-        refetch();
       }
+
+      setDialogOpen(false);
+      resetForm();
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save blog post");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -204,13 +252,52 @@ export function BlogManagement() {
                 </div>
 
                 <div>
-                  <Label htmlFor="cover_image_url">Cover Image URL</Label>
-                  <Input
-                    id="cover_image_url"
-                    value={formData.cover_image_url}
-                    onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
+                  <Label>Cover Image</Label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
                   />
+                  
+                  {imagePreview ? (
+                    <div className="relative mt-2">
+                      <img
+                        src={imagePreview}
+                        alt="Cover preview"
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-2 space-y-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Image
+                      </Button>
+                      <div className="text-center text-xs text-muted-foreground">or</div>
+                      <Input
+                        id="cover_image_url"
+                        value={formData.cover_image_url}
+                        onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
+                        placeholder="Enter image URL"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -249,8 +336,8 @@ export function BlogManagement() {
                   }}>
                     Cancel
                   </Button>
-                  <Button type="submit">
-                    {editingBlog ? "Update" : "Create"} Blog Post
+                  <Button type="submit" disabled={isUploading}>
+                    {isUploading ? "Saving..." : editingBlog ? "Update" : "Create"} Blog Post
                   </Button>
                 </div>
               </form>
@@ -265,38 +352,47 @@ export function BlogManagement() {
               key={blog.id}
               className="flex flex-col sm:flex-row items-start justify-between p-4 border rounded-lg gap-3"
             >
-              <div className="flex-1 w-full">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <h3 className="font-semibold">{blog.title}</h3>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded ${
-                      blog.is_published
-                        ? "bg-green-500/20 text-green-600"
-                        : "bg-yellow-500/20 text-yellow-600"
-                    }`}
-                  >
-                    {blog.is_published ? "Published" : "Draft"}
-                  </span>
-                </div>
-                {blog.summary && (
-                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                    {blog.summary}
-                  </p>
+              <div className="flex gap-3 flex-1 w-full">
+                {blog.cover_image_url && (
+                  <img
+                    src={blog.cover_image_url}
+                    alt={blog.title}
+                    className="w-20 h-20 object-cover rounded shrink-0"
+                  />
                 )}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                  <span>{blog.author_name}</span>
-                  {blog.publish_date && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(blog.publish_date).toLocaleDateString()}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h3 className="font-semibold">{blog.title}</h3>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded ${
+                        blog.is_published
+                          ? "bg-green-500/20 text-green-600"
+                          : "bg-yellow-500/20 text-yellow-600"
+                      }`}
+                    >
+                      {blog.is_published ? "Published" : "Draft"}
                     </span>
+                  </div>
+                  {blog.summary && (
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      {blog.summary}
+                    </p>
                   )}
-                  {blog.views_count !== null && blog.views_count > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {blog.views_count} views
-                    </span>
-                  )}
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                    <span>{blog.author_name}</span>
+                    {blog.publish_date && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {new Date(blog.publish_date).toLocaleDateString()}
+                      </span>
+                    )}
+                    {blog.views_count !== null && blog.views_count > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {blog.views_count} views
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
