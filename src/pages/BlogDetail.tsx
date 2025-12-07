@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function BlogDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const viewCountedRef = useRef(false);
 
   const { data: blog, isLoading } = useQuery({
     queryKey: ["blog", id],
@@ -27,15 +28,19 @@ export default function BlogDetail() {
     enabled: !!id,
   });
 
-  // Increment view count
+  // Increment view count using RPC function (server-side)
   useEffect(() => {
-    if (id) {
-      supabase
-        .from("weekly_blogs")
-        .update({ views_count: (blog?.views_count || 0) + 1 })
-        .eq("id", id)
-        .then(() => {});
-    }
+    const incrementView = async () => {
+      if (id && !viewCountedRef.current) {
+        viewCountedRef.current = true;
+        try {
+          await supabase.rpc('increment_blog_views', { blog_uuid: id });
+        } catch (err) {
+          console.error('Failed to increment view count:', err);
+        }
+      }
+    };
+    incrementView();
   }, [id]);
 
   const formattedDate = blog?.publish_date
