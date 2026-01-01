@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, Upload, X, Image } from "lucide-react";
 import { toast } from "sonner";
 
 export function PartnersManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
@@ -49,6 +52,49 @@ export function PartnersManagement() {
       toast.success("Partner deleted successfully");
       refetch();
     }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `partner-logo-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("partner-logos")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("partner-logos")
+        .getPublicUrl(fileName);
+      
+      setFormData({ ...formData, logo_url: urlData.publicUrl });
+      setLogoPreview(urlData.publicUrl);
+      toast.success("Logo uploaded successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload logo");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData({ ...formData, logo_url: "" });
+    setLogoPreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +142,7 @@ export function PartnersManagement() {
       is_active: partner.is_active,
       display_order: partner.display_order,
     });
+    setLogoPreview(partner.logo_url || null);
     setDialogOpen(true);
   };
 
@@ -109,6 +156,7 @@ export function PartnersManagement() {
       is_active: true,
       display_order: 0,
     });
+    setLogoPreview(null);
   };
 
   return (
@@ -149,20 +197,68 @@ export function PartnersManagement() {
                   placeholder="Partner organization name"
                 />
               </div>
+              
+              {/* Logo Upload Section */}
               <div className="space-y-2">
-                <Label htmlFor="logo_url">Logo URL</Label>
-                <Input
-                  id="logo_url"
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
+                <Label>Logo Image</Label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
                 />
-                {formData.logo_url && (
-                  <div className="mt-2 p-4 border rounded bg-muted">
-                    <img src={formData.logo_url} alt="Preview" className="h-16 w-auto object-contain" />
+                
+                {logoPreview || formData.logo_url ? (
+                  <div className="relative w-full p-4 border rounded-lg bg-muted">
+                    <img 
+                      src={logoPreview || formData.logo_url} 
+                      alt="Logo preview" 
+                      className="h-20 w-auto object-contain mx-auto"
+                    />
+                    <div className="flex gap-2 justify-center mt-3">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Replace
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Image className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Click to upload logo image
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG up to 5MB
+                    </p>
+                    {isUploading && (
+                      <div className="mt-3">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -210,7 +306,7 @@ export function PartnersManagement() {
                 />
                 <Label htmlFor="is_active">Display on website</Label>
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={isUploading}>
                 {editingPartner ? "Update Partner" : "Add Partner"}
               </Button>
             </form>
@@ -222,15 +318,15 @@ export function PartnersManagement() {
             <div key={partner.id} className="flex items-start justify-between p-4 border rounded-lg">
               <div className="flex gap-4 flex-1">
                 {partner.logo_url && (
-                  <img src={partner.logo_url} alt={partner.name} className="h-12 w-12 object-contain" />
+                  <img src={partner.logo_url} alt={partner.name} className="h-12 w-12 object-contain rounded" />
                 )}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-semibold">{partner.name}</h3>
                     {partner.is_active ? (
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Active</span>
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded dark:bg-green-900/30 dark:text-green-400">Active</span>
                     ) : (
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">Inactive</span>
+                      <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded">Inactive</span>
                     )}
                   </div>
                   {partner.description && <p className="text-sm text-muted-foreground mb-2">{partner.description}</p>}

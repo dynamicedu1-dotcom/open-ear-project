@@ -437,6 +437,7 @@ export type Database = {
           name: string
           panel_enabled: boolean | null
           panel_password: string | null
+          permissions: Json | null
           phone: string
           profile_image: string | null
           role: string
@@ -452,6 +453,7 @@ export type Database = {
           name: string
           panel_enabled?: boolean | null
           panel_password?: string | null
+          permissions?: Json | null
           phone: string
           profile_image?: string | null
           role: string
@@ -467,6 +469,7 @@ export type Database = {
           name?: string
           panel_enabled?: boolean | null
           panel_password?: string | null
+          permissions?: Json | null
           phone?: string
           profile_image?: string | null
           role?: string
@@ -542,38 +545,71 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          age: string | null
+          bio: string | null
+          contact_details: Json | null
+          country: string | null
           created_at: string | null
           display_name: string | null
           email: string
+          grade: string | null
           id: string
+          institute: string | null
           is_anonymous: boolean | null
           is_blocked: boolean | null
+          job_role: string | null
+          profile_photo_url: string | null
+          profile_type: string | null
+          region: string | null
           role: string | null
           session_token: string | null
+          title: string | null
           unique_id: string | null
           updated_at: string | null
         }
         Insert: {
+          age?: string | null
+          bio?: string | null
+          contact_details?: Json | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           email: string
+          grade?: string | null
           id?: string
+          institute?: string | null
           is_anonymous?: boolean | null
           is_blocked?: boolean | null
+          job_role?: string | null
+          profile_photo_url?: string | null
+          profile_type?: string | null
+          region?: string | null
           role?: string | null
           session_token?: string | null
+          title?: string | null
           unique_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          age?: string | null
+          bio?: string | null
+          contact_details?: Json | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string
+          grade?: string | null
           id?: string
+          institute?: string | null
           is_anonymous?: boolean | null
           is_blocked?: boolean | null
+          job_role?: string | null
+          profile_photo_url?: string | null
+          profile_type?: string | null
+          region?: string | null
           role?: string | null
           session_token?: string | null
+          title?: string | null
           unique_id?: string | null
           updated_at?: string | null
         }
