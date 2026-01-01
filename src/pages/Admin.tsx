@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen, User } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen, User, Download } from "lucide-react";
 import { toast } from "sonner";
 import { PartnersManagement } from "@/components/PartnersManagement";
 import { TeamManagement } from "@/components/TeamManagement";
@@ -224,6 +224,10 @@ export default function Admin() {
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">Users</span>
               </TabsTrigger>
+              <TabsTrigger value="export" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -277,6 +281,10 @@ export default function Admin() {
 
           <TabsContent value="users">
             <UsersManagement />
+          </TabsContent>
+
+          <TabsContent value="export">
+            <DataExportManagement />
           </TabsContent>
         </Tabs>
       </div>
@@ -699,7 +707,19 @@ function CollaborationsManagement() {
 
 // Feedback Management Component
 function FeedbackManagement() {
-  const { data: feedback } = useQuery({
+  const [editingFeedback, setEditingFeedback] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+    type: "",
+    organization: "",
+    phone: "",
+    rating: 0,
+  });
+
+  const { data: feedback, refetch } = useQuery({
     queryKey: ["adminFeedback"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -712,40 +732,347 @@ function FeedbackManagement() {
     },
   });
 
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("feedback")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to delete feedback");
+    } else {
+      toast.success("Feedback deleted successfully");
+      refetch();
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingFeedback(item);
+    setFormData({
+      name: item.name || "",
+      email: item.email || "",
+      message: item.message,
+      type: item.type,
+      organization: item.organization || "",
+      phone: item.phone || "",
+      rating: item.rating || 0,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingFeedback) return;
+
+    const { error } = await supabase
+      .from("feedback")
+      .update({
+        name: formData.name || null,
+        email: formData.email || null,
+        message: formData.message,
+        type: formData.type,
+        organization: formData.organization || null,
+        phone: formData.phone || null,
+        rating: formData.rating || null,
+      })
+      .eq("id", editingFeedback.id);
+
+    if (error) {
+      toast.error("Failed to update feedback");
+    } else {
+      toast.success("Feedback updated successfully");
+      setDialogOpen(false);
+      setEditingFeedback(null);
+      refetch();
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Feedback</CardTitle>
-        <CardDescription>View community feedback</CardDescription>
+        <CardDescription>View and manage community feedback</CardDescription>
       </CardHeader>
       <CardContent>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setEditingFeedback(null);
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Feedback</DialogTitle>
+              <DialogDescription>Update feedback details</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <Input
+                  id="type"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="organization">Organization</Label>
+                  <Input
+                    id="organization"
+                    value={formData.organization}
+                    onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full">Update Feedback</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <div className="space-y-4">
           {feedback?.map((item) => (
             <div key={item.id} className="p-4 border rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium px-2 py-1 bg-primary/10 rounded">
-                  {item.type}
-                </span>
-                {item.rating && (
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${
-                          i < item.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                        }`}
-                      />
-                    ))}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-medium px-2 py-1 bg-primary/10 rounded">
+                      {item.type}
+                    </span>
+                    {item.rating && (
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < item.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
+                  <p className="text-sm mb-2">{item.message}</p>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                    {item.name && <span>{item.name}</span>}
+                    {item.email && <span>{item.email}</span>}
+                    {item.organization && <span>{item.organization}</span>}
+                    <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(item)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!feedback || feedback.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">No feedback yet</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Data Export Management Component
+function DataExportManagement() {
+  const [isExporting, setIsExporting] = useState<string | null>(null);
+
+  const exportData = async (tableName: string, displayName: string) => {
+    setIsExporting(tableName);
+    try {
+      let query = supabase.from(tableName as any).select("*");
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Convert to CSV
+      if (!data || data.length === 0) {
+        toast.error(`No ${displayName} data to export`);
+        return;
+      }
+
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(","),
+        ...data.map(row => 
+          headers.map(header => {
+            const value = (row as any)[header];
+            if (value === null || value === undefined) return "";
+            if (typeof value === "object") return JSON.stringify(value).replace(/"/g, '""');
+            return String(value).includes(",") ? `"${value}"` : value;
+          }).join(",")
+        )
+      ].join("\n");
+
+      // Download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${tableName}_export_${new Date().toISOString().split("T")[0]}.csv`;
+      link.click();
+
+      toast.success(`${displayName} exported successfully`);
+    } catch (error: any) {
+      toast.error(`Failed to export ${displayName}: ${error.message}`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const exportAllData = async () => {
+    setIsExporting("all");
+    try {
+      const tables = [
+        { name: "user_profiles", display: "Users" },
+        { name: "voices", display: "Posts" },
+        { name: "comments", display: "Comments" },
+        { name: "weekly_blogs", display: "Blogs" },
+        { name: "feedback", display: "Feedback" },
+        { name: "partners", display: "Partners" },
+        { name: "actions", display: "Actions" },
+        { name: "team_members", display: "Team Members" },
+      ];
+
+      const allData: Record<string, any[]> = {};
+
+      for (const table of tables) {
+        const { data } = await supabase.from(table.name as any).select("*");
+        allData[table.name] = data || [];
+      }
+
+      const blob = new Blob([JSON.stringify(allData, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `yourvoice_full_export_${new Date().toISOString().split("T")[0]}.json`;
+      link.click();
+
+      toast.success("All data exported successfully");
+    } catch (error: any) {
+      toast.error(`Failed to export: ${error.message}`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const exportItems = [
+    { table: "user_profiles", name: "Users", icon: User, description: "All user profiles and account data" },
+    { table: "voices", name: "Posts/Voices", icon: MessageCircle, description: "All community posts and opinions" },
+    { table: "comments", name: "Comments", icon: MessageSquare, description: "All comments on posts" },
+    { table: "weekly_blogs", name: "Blogs", icon: BookOpen, description: "All blog articles" },
+    { table: "feedback", name: "Feedback", icon: Star, description: "All feedback submissions" },
+    { table: "partners", name: "Partners", icon: Handshake, description: "Partner organizations" },
+    { table: "actions", name: "Actions", icon: Lightbulb, description: "Community actions and initiatives" },
+    { table: "team_members", name: "Team", icon: UserSquare, description: "Team member profiles" },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Download className="h-5 w-5" />
+          Data Export
+        </CardTitle>
+        <CardDescription>Export platform data for analytics, backup, or AI training</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Export All Button */}
+        <Button 
+          onClick={exportAllData} 
+          disabled={isExporting !== null}
+          className="w-full mb-6"
+          size="lg"
+        >
+          {isExporting === "all" ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-background mr-2"></div>
+              Exporting All Data...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4 mr-2" />
+              Export All Data (JSON)
+            </>
+          )}
+        </Button>
+
+        <div className="text-sm text-muted-foreground mb-4">Or export individual tables as CSV:</div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {exportItems.map((item) => (
+            <div 
+              key={item.table}
+              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <item.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportData(item.table, item.name)}
+                disabled={isExporting !== null}
+              >
+                {isExporting === item.table ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                ) : (
+                  <Download className="h-4 w-4" />
                 )}
-              </div>
-              <p className="text-sm mb-2">{item.message}</p>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                {item.name && <span>{item.name}</span>}
-                {item.email && <span>{item.email}</span>}
-                {item.organization && <span>{item.organization}</span>}
-                <span>{new Date(item.created_at).toLocaleDateString()}</span>
-              </div>
+              </Button>
             </div>
           ))}
         </div>

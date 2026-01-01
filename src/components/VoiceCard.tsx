@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Heart, MessageCircle, Share2, User } from "lucide-react";
+import { Heart, MessageCircle, Share2, User, BadgeCheck } from "lucide-react";
 import { Card, CardContent, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -22,6 +22,7 @@ interface VoiceCardProps {
   commentCount: number;
   imageUrl?: string;
   createdAt?: string;
+  isTeamPost?: boolean;
   onSupport: (id: string) => void;
   onClick: (id: string) => void;
   onLikeChange?: () => void;
@@ -54,6 +55,7 @@ export const VoiceCard = ({
   commentCount,
   imageUrl,
   createdAt,
+  isTeamPost,
   onSupport,
   onClick,
   onLikeChange,
@@ -69,6 +71,7 @@ export const VoiceCard = ({
   const displayContent = content.length > 150 ? content.substring(0, 150) + "..." : content;
   const displayName = isAnonymous ? "Anonymous" : username || "Student";
   const timeAgo = createdAt ? getTimeAgo(new Date(createdAt)) : "";
+  const isTeam = isTeamPost || username?.startsWith("TEAM DYNAMIC");
 
   // Check if user has liked this post
   useEffect(() => {
@@ -190,17 +193,33 @@ export const VoiceCard = ({
           {/* Header */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-4 w-4 text-muted-foreground" />
+              <div className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center",
+                isTeam ? "bg-emerald-500/20" : "bg-muted"
+              )}>
+                <User className={cn(
+                  "h-4 w-4",
+                  isTeam ? "text-emerald-500" : "text-muted-foreground"
+                )} />
               </div>
-              <div>
-                <p className="text-sm font-medium">{displayName}</p>
-                {timeAgo && (
-                  <p className="text-xs text-muted-foreground">{timeAgo}</p>
+              <div className="flex items-center gap-1.5">
+                <p className={cn(
+                  "text-sm font-medium",
+                  isTeam && "text-emerald-600 dark:text-emerald-400"
+                )}>
+                  {displayName}
+                </p>
+                {isTeam && (
+                  <BadgeCheck className="h-4 w-4 text-emerald-500 fill-emerald-500/20" />
                 )}
               </div>
             </div>
-            <span className="text-3xl">{moodEmojis[mood]}</span>
+            <div className="flex items-center gap-2">
+              {timeAgo && (
+                <p className="text-xs text-muted-foreground">{timeAgo}</p>
+              )}
+              <span className="text-3xl">{moodEmojis[mood]}</span>
+            </div>
           </div>
 
           {/* Topic Badge */}
