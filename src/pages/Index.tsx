@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { VoiceCard } from "@/components/VoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
-import { Navigation } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Mic, TrendingUp, Heart, MessageSquare, LogIn, Shield } from "lucide-react";
 import { WeeklyBlogSection } from "@/components/WeeklyBlogSection";
 import { useToast } from "@/hooks/use-toast";
 import VisitorCounter from "@/components/VisitorCounter";
+import { ResponsiveLayout } from "@/layouts/ResponsiveLayout";
+import { useIsMobile } from "@/hooks/useDeviceType";
 
 interface Voice {
   id: string;
@@ -19,11 +20,14 @@ interface Voice {
   username: string | null;
   support_count: number;
   comment_count: number;
+  image_url?: string;
+  created_at?: string;
 }
 
 const Index = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [voices, setVoices] = useState<Voice[]>([]);
   const [totalVoices, setTotalVoices] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -45,7 +49,6 @@ const Index = () => {
     fetchVoices();
     fetchCount();
 
-    // Subscribe to real-time updates
     const channel = supabase
       .channel('voices-changes')
       .on(
@@ -73,7 +76,7 @@ const Index = () => {
         .from('voices')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(6);
+        .limit(isMobile ? 10 : 6);
 
       if (error) throw error;
       setVoices((data || []) as Voice[]);
@@ -126,10 +129,74 @@ const Index = () => {
     navigate(`/wall?voice=${id}`);
   };
 
+  // Mobile Feed View
+  if (isMobile) {
+    return (
+      <ResponsiveLayout mobileTitle="Your Voice" showStories={true}>
+        {/* Mobile Feed */}
+        <div className="divide-y divide-border">
+          {loading ? (
+            <div className="p-4 space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-48 bg-card/50 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : voices.length === 0 ? (
+            <div className="text-center py-20 px-4">
+              <p className="text-foreground/60 text-lg mb-6">
+                No voices yet. Be the first to share!
+              </p>
+              <Button onClick={() => navigate("/share")} className="gradient-accent">
+                <Mic className="mr-2 h-4 w-4" />
+                Share Your Voice
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 p-4">
+              {/* Quick Stats */}
+              <div className="flex items-center justify-center gap-3 bg-card/50 rounded-xl p-3">
+                <TrendingUp className="h-5 w-5 text-accent" />
+                <span className="text-xl font-bold text-accent">{totalVoices.toLocaleString()}</span>
+                <span className="text-foreground/70 text-sm">Voices Shared</span>
+              </div>
+
+              {/* Voice Feed */}
+              {voices.map((voice) => (
+                <VoiceCard
+                  key={voice.id}
+                  id={voice.id}
+                  content={voice.content}
+                  mood={voice.mood}
+                  category={voice.category}
+                  isAnonymous={voice.is_anonymous}
+                  username={voice.username || undefined}
+                  supportCount={voice.support_count}
+                  commentCount={voice.comment_count}
+                  imageUrl={voice.image_url}
+                  createdAt={voice.created_at}
+                  onSupport={handleSupport}
+                  onClick={handleVoiceClick}
+                  onLikeChange={fetchVoices}
+                />
+              ))}
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate("/wall")}
+              >
+                View All Voices
+              </Button>
+            </div>
+          )}
+        </div>
+      </ResponsiveLayout>
+    );
+  }
+
+  // Desktop View (existing)
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
+    <ResponsiveLayout>
       {/* Hero Section */}
       <section className="relative overflow-hidden gradient-warm py-20 px-6">
         <div className="absolute inset-0 opacity-10">
@@ -208,8 +275,11 @@ const Index = () => {
                   username={voice.username || undefined}
                   supportCount={voice.support_count}
                   commentCount={voice.comment_count}
+                  imageUrl={voice.image_url}
+                  createdAt={voice.created_at}
                   onSupport={handleSupport}
                   onClick={handleVoiceClick}
+                  onLikeChange={fetchVoices}
                 />
               ))}
             </div>
@@ -315,7 +385,7 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
+    </ResponsiveLayout>
   );
 };
 
