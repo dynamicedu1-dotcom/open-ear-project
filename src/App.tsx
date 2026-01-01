@@ -19,6 +19,9 @@ import MyActivity from "./pages/MyActivity";
 import Blog from "./pages/Blog";
 import BlogDetail from "./pages/BlogDetail";
 import TeamPanel from "./pages/TeamPanel";
+import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,9 @@ const App = () => (
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/team-panel" element={<TeamPanel />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile/:userId" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
