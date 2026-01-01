@@ -6,10 +6,9 @@ import { VoiceCard } from "@/components/VoiceCard";
 import { ResharedVoiceCard } from "@/components/ResharedVoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
 import { VoiceDetailDialog } from "@/components/VoiceDetailDialog";
-import { Navigation } from "@/components/Navigation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ResponsiveLayout } from "@/layouts/ResponsiveLayout";
+import { useIsMobile } from "@/hooks/useDeviceType";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Voice {
   id: string;
@@ -48,6 +56,7 @@ interface Reshare {
 const Wall = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [searchParams] = useSearchParams();
   const [voices, setVoices] = useState<Voice[]>([]);
   const [reshares, setReshares] = useState<Reshare[]>([]);
@@ -57,6 +66,7 @@ const Wall = () => {
     searchParams.get("category") || "all"
   );
   const [moodFilter, setMoodFilter] = useState("all");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   const categories = ["all", "Education", "Pressure", "Future", "Skills", "Dreams", "Other"];
   const moods = ["all", "happy", "calm", "sad", "angry", "love"];
@@ -112,7 +122,6 @@ const Wall = () => {
 
       if (error) throw error;
       
-      // Filter reshares to only include valid ones with voice data
       const validReshares = (data || []).filter((r: any) => r.voice) as Reshare[];
       setReshares(validReshares);
     } catch (error) {
@@ -179,7 +188,6 @@ const Wall = () => {
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Auto-open dialog if voice ID is in URL
   useEffect(() => {
     const voiceParam = searchParams.get('voice');
     if (voiceParam && voices.some(v => v.id === voiceParam)) {
@@ -193,36 +201,33 @@ const Wall = () => {
     setDialogOpen(true);
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="gradient-warm py-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-glow to-accent-glow bg-clip-text text-transparent">
-              Opinion Wall
-            </h1>
-            <p className="text-lg text-foreground/80">
-              Live Voices from Students
-            </p>
-          </div>
+  const activeFiltersCount = (categoryFilter !== "all" ? 1 : 0) + (moodFilter !== "all" ? 1 : 0);
 
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search voices..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <Filter className="h-4 w-4 mr-2" />
+  // Mobile Filters Sheet
+  const MobileFilters = () => (
+    <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon" className="relative">
+          <SlidersHorizontal className="h-4 w-4" />
+          {activeFiltersCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center">
+              {activeFiltersCount}
+            </span>
+          )}
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="h-[50vh] rounded-t-3xl">
+        <SheetHeader>
+          <SheetTitle>Filter Voices</SheetTitle>
+        </SheetHeader>
+        <div className="space-y-6 py-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Category</label>
+            <Select value={categoryFilter} onValueChange={(val) => {
+              setCategoryFilter(val);
+              setFilterSheetOpen(false);
+            }}>
+              <SelectTrigger>
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -233,9 +238,14 @@ const Wall = () => {
                 ))}
               </SelectContent>
             </Select>
-
-            <Select value={moodFilter} onValueChange={setMoodFilter}>
-              <SelectTrigger className="w-full md:w-48">
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Mood</label>
+            <Select value={moodFilter} onValueChange={(val) => {
+              setMoodFilter(val);
+              setFilterSheetOpen(false);
+            }}>
+              <SelectTrigger>
                 <SelectValue placeholder="Mood" />
               </SelectTrigger>
               <SelectContent>
@@ -247,12 +257,100 @@ const Wall = () => {
               </SelectContent>
             </Select>
           </div>
+          {activeFiltersCount > 0 && (
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => {
+                setCategoryFilter("all");
+                setMoodFilter("all");
+                setFilterSheetOpen(false);
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </div>
-      </div>
+      </SheetContent>
+    </Sheet>
+  );
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+  return (
+    <ResponsiveLayout mobileTitle="Opinion Wall">
+      {/* Mobile Header with Search */}
+      {isMobile ? (
+        <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-lg border-b border-border px-4 py-3">
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search voices..."
+                className="pl-9 h-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <MobileFilters />
+          </div>
+        </div>
+      ) : (
+        <div className="gradient-warm py-12 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8 animate-fade-in">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary-glow to-accent-glow bg-clip-text text-transparent">
+                Opinion Wall
+              </h1>
+              <p className="text-lg text-foreground/80">
+                Live Voices from Students
+              </p>
+            </div>
+
+            {/* Desktop Filters */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search voices..."
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat === "all" ? "All Topics" : cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={moodFilter} onValueChange={setMoodFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Mood" />
+                </SelectTrigger>
+                <SelectContent>
+                  {moods.map((mood) => (
+                    <SelectItem key={mood} value={mood}>
+                      {mood === "all" ? "All Moods" : mood.charAt(0).toUpperCase() + mood.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={isMobile ? "p-4" : "max-w-7xl mx-auto px-6 py-12"}>
         {/* Reshares Section */}
-        {reshares.length > 0 && (
+        {reshares.length > 0 && !isMobile && (
           <div className="mb-12">
             <h2 className="text-xl font-semibold mb-4 text-foreground/90">Recently Reshared</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -284,9 +382,12 @@ const Wall = () => {
         )}
 
         {/* Main Voices */}
-        <h2 className="text-xl font-semibold mb-4 text-foreground/90">All Voices</h2>
+        {!isMobile && (
+          <h2 className="text-xl font-semibold mb-4 text-foreground/90">All Voices</h2>
+        )}
+        
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="h-48 bg-card/50 rounded-lg animate-pulse" />
             ))}
@@ -301,7 +402,7 @@ const Wall = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
+          <div className={isMobile ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up"}>
             {voices.map((voice) => (
               <VoiceCard
                 key={voice.id}
@@ -324,14 +425,14 @@ const Wall = () => {
         )}
       </div>
 
-      <FloatingVoiceButton />
+      {!isMobile && <FloatingVoiceButton />}
       
       <VoiceDetailDialog 
         voiceId={selectedVoiceId}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
-    </div>
+    </ResponsiveLayout>
   );
 };
 
