@@ -71,6 +71,99 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_registrations: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          blog_id: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          payment_reference: string | null
+          payment_status: string | null
+          registration_data: Json | null
+          slots_booked: number | null
+          status: string | null
+          updated_at: string | null
+          user_profile_id: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          blog_id: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          registration_data?: Json | null
+          slots_booked?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          blog_id?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string | null
+          registration_data?: Json | null
+          slots_booked?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_registrations_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_registrations_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_registrations_blog_id_fkey"
+            columns: ["blog_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_blogs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_registrations_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_registrations_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collaboration_areas: {
         Row: {
           created_at: string | null
@@ -1068,13 +1161,27 @@ export type Database = {
       weekly_blogs: {
         Row: {
           author_name: string | null
+          blog_type: string | null
           content: string
           cover_image_url: string | null
           created_at: string | null
+          custom_fields: Json | null
+          event_date: string | null
+          event_end_date: string | null
+          event_location: string | null
+          event_slots: number | null
           id: string
+          is_paid: boolean | null
           is_published: boolean | null
+          max_registrations: number | null
+          payment_info: Json | null
+          price: number | null
           publish_date: string | null
+          registration_deadline: string | null
+          registration_fields: Json | null
+          requires_approval: boolean | null
           summary: string | null
+          team_can_edit: boolean | null
           title: string
           updated_at: string | null
           views_count: number | null
@@ -1082,13 +1189,27 @@ export type Database = {
         }
         Insert: {
           author_name?: string | null
+          blog_type?: string | null
           content: string
           cover_image_url?: string | null
           created_at?: string | null
+          custom_fields?: Json | null
+          event_date?: string | null
+          event_end_date?: string | null
+          event_location?: string | null
+          event_slots?: number | null
           id?: string
+          is_paid?: boolean | null
           is_published?: boolean | null
+          max_registrations?: number | null
+          payment_info?: Json | null
+          price?: number | null
           publish_date?: string | null
+          registration_deadline?: string | null
+          registration_fields?: Json | null
+          requires_approval?: boolean | null
           summary?: string | null
+          team_can_edit?: boolean | null
           title: string
           updated_at?: string | null
           views_count?: number | null
@@ -1096,13 +1217,27 @@ export type Database = {
         }
         Update: {
           author_name?: string | null
+          blog_type?: string | null
           content?: string
           cover_image_url?: string | null
           created_at?: string | null
+          custom_fields?: Json | null
+          event_date?: string | null
+          event_end_date?: string | null
+          event_location?: string | null
+          event_slots?: number | null
           id?: string
+          is_paid?: boolean | null
           is_published?: boolean | null
+          max_registrations?: number | null
+          payment_info?: Json | null
+          price?: number | null
           publish_date?: string | null
+          registration_deadline?: string | null
+          registration_fields?: Json | null
+          requires_approval?: boolean | null
           summary?: string | null
+          team_can_edit?: boolean | null
           title?: string
           updated_at?: string | null
           views_count?: number | null
@@ -1149,6 +1284,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      blog_type: "article" | "event" | "announcement" | "registration"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1277,6 +1413,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      blog_type: ["article", "event", "announcement", "registration"],
     },
   },
 } as const
