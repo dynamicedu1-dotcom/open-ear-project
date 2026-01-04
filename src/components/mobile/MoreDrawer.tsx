@@ -19,6 +19,8 @@ import {
   Settings,
   HelpCircle,
   FileText,
+  Heart,
+  Code2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -33,6 +35,7 @@ const menuItems = [
   { path: "/actions", icon: Lightbulb, label: "Action Hub" },
   { path: "/collaborate", icon: Handshake, label: "Collaborate" },
   { path: "/team", icon: UserSquare, label: "Our Team" },
+  { path: "/donate", icon: Heart, label: "Donate" },
   { path: "/feedback", icon: MessageCircle, label: "Feedback" },
   { path: "/contact", icon: Phone, label: "Contact Us" },
   { path: "/insights", icon: BarChart3, label: "Insights" },
@@ -40,6 +43,8 @@ const menuItems = [
 
 const secondaryItems = [
   { path: "/team-panel", icon: Shield, label: "Team Panel" },
+  { path: "/terms", icon: FileText, label: "Terms & Policies" },
+  { path: "/about-developer", icon: Code2, label: "About Developer" },
 ];
 
 export function MoreDrawer({ open, onOpenChange }: MoreDrawerProps) {
