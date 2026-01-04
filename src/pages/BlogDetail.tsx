@@ -190,7 +190,7 @@ export default function BlogDetail() {
             eventEndDate={blog.event_end_date}
             eventLocation={blog.event_location}
             eventSlots={blog.event_slots}
-            registrationFields={blog.registration_fields || []}
+            registrationFields={Array.isArray(blog.registration_fields) ? blog.registration_fields as Array<{ name: string; label: string; type: string; required: boolean }> : []}
             isPaid={blog.is_paid || false}
             price={blog.price}
             registrationDeadline={blog.registration_deadline}
