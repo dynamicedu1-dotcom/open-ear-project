@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen, User, Download } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen, User, Download, ClipboardList, Heart, Image, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { PartnersManagement } from "@/components/PartnersManagement";
 import { TeamManagement } from "@/components/TeamManagement";
@@ -18,6 +18,11 @@ import { FeedbackTypesManagement } from "@/components/FeedbackTypesManagement";
 import { CollaborationOptionsManagement } from "@/components/CollaborationOptionsManagement";
 import { BlogManagement } from "@/components/BlogManagement";
 import { UsersManagement } from "@/components/UsersManagement";
+import { RegistrationsManagement } from "@/components/RegistrationsManagement";
+import { DonationsManagement } from "@/components/DonationsManagement";
+import { StaticPagesManagement } from "@/components/StaticPagesManagement";
+import { BannersManagement } from "@/components/BannersManagement";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
@@ -228,6 +233,26 @@ export default function Admin() {
                 <Download className="h-4 w-4" />
                 <span className="hidden sm:inline">Export</span>
               </TabsTrigger>
+              <TabsTrigger value="registrations" className="flex items-center gap-2 min-h-[44px] px-4">
+                <ClipboardList className="h-4 w-4" />
+                <span className="hidden sm:inline">Registrations</span>
+              </TabsTrigger>
+              <TabsTrigger value="donations" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline">Donations</span>
+              </TabsTrigger>
+              <TabsTrigger value="pages" className="flex items-center gap-2 min-h-[44px] px-4">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Pages</span>
+              </TabsTrigger>
+              <TabsTrigger value="banners" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Image className="h-4 w-4" />
+                <span className="hidden sm:inline">Banners</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2 min-h-[44px] px-4">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Analytics</span>
+              </TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
@@ -285,6 +310,26 @@ export default function Admin() {
 
           <TabsContent value="export">
             <DataExportManagement />
+          </TabsContent>
+
+          <TabsContent value="registrations">
+            <RegistrationsManagement />
+          </TabsContent>
+
+          <TabsContent value="donations">
+            <DonationsManagement />
+          </TabsContent>
+
+          <TabsContent value="pages">
+            <StaticPagesManagement />
+          </TabsContent>
+
+          <TabsContent value="banners">
+            <BannersManagement />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
           </TabsContent>
         </Tabs>
       </div>

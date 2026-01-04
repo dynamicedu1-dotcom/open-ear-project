@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, X, Home, MessageSquare, Lightbulb, Users, UserSquare, MessageCircle, Shield, BookOpen } from "lucide-react";
+import { Menu, X, Home, MessageSquare, Lightbulb, Users, UserSquare, MessageCircle, Shield, BookOpen, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileDropdown } from "./ProfileDropdown";
 
@@ -33,6 +33,7 @@ export const Navigation = () => {
     { path: "/actions", label: "Actions", icon: Lightbulb },
     { path: "/collaborate", label: "Collaborate", icon: Users },
     { path: "/team", label: "Team", icon: UserSquare },
+    { path: "/donate", label: "Donate", icon: Heart },
     { path: "/feedback", label: "Feedback", icon: MessageCircle },
   ];
 

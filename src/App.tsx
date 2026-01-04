@@ -22,6 +22,10 @@ import TeamPanel from "./pages/TeamPanel";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import Donate from "./pages/Donate";
+import Terms from "./pages/Terms";
+import AboutDeveloper from "./pages/AboutDeveloper";
+import StaticPage from "./pages/StaticPage";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +54,10 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile/:userId" element={<Profile />} />
+          <Route path="/donate" element={<Donate />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/about-developer" element={<AboutDeveloper />} />
+          <Route path="/page/:slug" element={<StaticPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
