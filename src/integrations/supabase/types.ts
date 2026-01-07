@@ -902,6 +902,45 @@ export type Database = {
           },
         ]
       }
+      search_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          query: string
+          result_type: string | null
+          user_profile_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          query: string
+          result_type?: string | null
+          user_profile_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          query?: string
+          result_type?: string | null
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_history_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_history_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       static_pages: {
         Row: {
           content: string

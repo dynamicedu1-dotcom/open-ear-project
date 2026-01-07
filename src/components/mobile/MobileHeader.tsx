@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 interface MobileHeaderProps {
   title?: string;
@@ -15,6 +17,7 @@ export function MobileHeader({
   notificationCount = 0,
 }: MobileHeaderProps) {
   const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-b border-border safe-area-top">
@@ -26,20 +29,28 @@ export function MobileHeader({
           {title}
         </button>
 
-        {showNotification && (
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            {notificationCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
-              >
-                {notificationCount > 99 ? "99+" : notificationCount}
-              </Badge>
-            )}
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={() => setSearchOpen(true)}>
+            <Search className="h-5 w-5" />
           </Button>
-        )}
+          
+          {showNotification && (
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {notificationCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]"
+                >
+                  {notificationCount > 99 ? "99+" : notificationCount}
+                </Badge>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
+      
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }

@@ -28,6 +28,13 @@ export function TeamManagement() {
     display_order: 0,
     panel_enabled: false,
     panel_password: "",
+    permissions: {
+      create_posts: true,
+      create_blogs: false,
+      pin_posts: false,
+      respond_comments: true,
+      manage_blogs: false,
+    },
   });
 
   const { data: teamMembers, refetch } = useQuery({
@@ -93,6 +100,7 @@ export function TeamManagement() {
 
   const handleEdit = (member: any) => {
     setEditingMember(member);
+    const permissions = member.permissions || {};
     setFormData({
       name: member.name,
       role: member.role,
@@ -105,6 +113,13 @@ export function TeamManagement() {
       display_order: member.display_order,
       panel_enabled: member.panel_enabled || false,
       panel_password: member.panel_password || "",
+      permissions: {
+        create_posts: permissions.create_posts ?? true,
+        create_blogs: permissions.create_blogs ?? false,
+        pin_posts: permissions.pin_posts ?? false,
+        respond_comments: permissions.respond_comments ?? true,
+        manage_blogs: permissions.manage_blogs ?? false,
+      },
     });
     setDialogOpen(true);
   };
@@ -122,6 +137,13 @@ export function TeamManagement() {
       display_order: 0,
       panel_enabled: false,
       panel_password: "",
+      permissions: {
+        create_posts: true,
+        create_blogs: false,
+        pin_posts: false,
+        respond_comments: true,
+        manage_blogs: false,
+      },
     });
   };
 
@@ -381,19 +403,83 @@ export function TeamManagement() {
                   <Label htmlFor="panel_enabled">Enable Team Panel Access</Label>
                 </div>
                 {formData.panel_enabled && (
-                  <div className="space-y-2">
-                    <Label htmlFor="panel_password">Panel Login Password</Label>
-                    <Input
-                      id="panel_password"
-                      type="password"
-                      value={formData.panel_password}
-                      onChange={(e) => setFormData({ ...formData, panel_password: e.target.value })}
-                      placeholder="Set password for team panel login"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This password will be used by the team member to login to their Team Panel
-                    </p>
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="panel_password">Panel Login Password</Label>
+                      <Input
+                        id="panel_password"
+                        type="password"
+                        value={formData.panel_password}
+                        onChange={(e) => setFormData({ ...formData, panel_password: e.target.value })}
+                        placeholder="Set password for team panel login"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This password will be used by the team member to login to their Team Panel
+                      </p>
+                    </div>
+
+                    {/* Permissions */}
+                    <div className="space-y-3 pt-2">
+                      <Label className="text-sm font-medium">Permissions</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="perm_posts"
+                            checked={formData.permissions.create_posts}
+                            onCheckedChange={(checked) => setFormData({
+                              ...formData,
+                              permissions: { ...formData.permissions, create_posts: checked }
+                            })}
+                          />
+                          <Label htmlFor="perm_posts" className="text-sm">Create Posts</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="perm_blogs"
+                            checked={formData.permissions.create_blogs}
+                            onCheckedChange={(checked) => setFormData({
+                              ...formData,
+                              permissions: { ...formData.permissions, create_blogs: checked }
+                            })}
+                          />
+                          <Label htmlFor="perm_blogs" className="text-sm">Create Blogs</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="perm_pin"
+                            checked={formData.permissions.pin_posts}
+                            onCheckedChange={(checked) => setFormData({
+                              ...formData,
+                              permissions: { ...formData.permissions, pin_posts: checked }
+                            })}
+                          />
+                          <Label htmlFor="perm_pin" className="text-sm">Pin Posts</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="perm_respond"
+                            checked={formData.permissions.respond_comments}
+                            onCheckedChange={(checked) => setFormData({
+                              ...formData,
+                              permissions: { ...formData.permissions, respond_comments: checked }
+                            })}
+                          />
+                          <Label htmlFor="perm_respond" className="text-sm">Respond as Team</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="perm_manage_blogs"
+                            checked={formData.permissions.manage_blogs}
+                            onCheckedChange={(checked) => setFormData({
+                              ...formData,
+                              permissions: { ...formData.permissions, manage_blogs: checked }
+                            })}
+                          />
+                          <Label htmlFor="perm_manage_blogs" className="text-sm">Manage Blogs</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
               

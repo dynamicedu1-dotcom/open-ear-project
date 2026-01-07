@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { ResponsiveLayout } from "@/layouts/ResponsiveLayout";
 import { useIsMobile } from "@/hooks/useDeviceType";
+import { BannerDisplay } from "@/components/BannerDisplay";
 import {
   Sheet,
   SheetContent,
@@ -349,6 +350,8 @@ const Wall = () => {
       )}
 
       <div className={isMobile ? "p-4" : "max-w-7xl mx-auto px-6 py-12"}>
+        {/* Wall Top Banner */}
+        <BannerDisplay position="wall-top" className="mb-6" />
         {/* Reshares Section */}
         {reshares.length > 0 && !isMobile && (
           <div className="mb-12">
