@@ -4,7 +4,8 @@ import { VoiceCard } from "@/components/VoiceCard";
 import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Mic, TrendingUp, Heart, MessageSquare, LogIn, Shield } from "lucide-react";
+import { Mic, TrendingUp, Heart, MessageSquare, LogIn, Shield, FileText, Code2 } from "lucide-react";
+import { BannerDisplay } from "@/components/BannerDisplay";
 import { WeeklyBlogSection } from "@/components/WeeklyBlogSection";
 import { useToast } from "@/hooks/use-toast";
 import VisitorCounter from "@/components/VisitorCounter";
@@ -235,6 +236,11 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Banners */}
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <BannerDisplay position="home-hero" />
+      </div>
+
       {/* Weekly Blog Section */}
       <WeeklyBlogSection />
 
@@ -322,7 +328,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-12 px-6 bg-card/20">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
             <div>
               <h3 className="font-bold text-lg mb-4">Your Voice</h3>
               <p className="text-sm text-muted-foreground">
@@ -354,6 +360,23 @@ const Index = () => {
                 </Button>
                 <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/feedback")}>
                   Feedback
+                </Button>
+                <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/donate")}>
+                  <Heart className="h-4 w-4 mr-1" />
+                  Donate
+                </Button>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg mb-4">Legal</h3>
+              <div className="flex flex-col gap-2">
+                <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/terms")}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  Terms & Policies
+                </Button>
+                <Button variant="link" className="h-auto p-0 justify-center md:justify-start" onClick={() => navigate("/about-developer")}>
+                  <Code2 className="h-4 w-4 mr-1" />
+                  About Developer
                 </Button>
                 <Button 
                   variant="link" 

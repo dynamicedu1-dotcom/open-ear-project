@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
-import { Menu, X, Home, MessageSquare, Lightbulb, Users, UserSquare, MessageCircle, Shield, BookOpen, Heart } from "lucide-react";
+import { Menu, X, Home, MessageSquare, Lightbulb, Users, UserSquare, MessageCircle, Shield, BookOpen, Heart, Search } from "lucide-react";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileDropdown } from "./ProfileDropdown";
 
@@ -11,6 +12,7 @@ export const Navigation = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -73,6 +75,14 @@ export const Navigation = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSearchOpen(true)}
+              title="Search (⌘K)"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
             <ProfileDropdown />
             <Button
               variant="outline"
@@ -169,6 +179,8 @@ export const Navigation = () => {
           </Sheet>
         </div>
       </div>
+      
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </nav>
   );
 };
