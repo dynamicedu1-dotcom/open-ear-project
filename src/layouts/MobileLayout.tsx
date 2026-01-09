@@ -1,12 +1,12 @@
 import { ReactNode } from "react";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { BottomTabBar } from "@/components/mobile/BottomTabBar";
-import { StoriesCarousel } from "@/components/mobile/StoriesCarousel";
+import { BannerDisplay } from "@/components/BannerDisplay";
 
 interface MobileLayoutProps {
   children: ReactNode;
   title?: string;
-  showStories?: boolean;
+  showBanner?: boolean;
   showHeader?: boolean;
   showBottomNav?: boolean;
 }
@@ -14,7 +14,7 @@ interface MobileLayoutProps {
 export function MobileLayout({
   children,
   title,
-  showStories = false,
+  showBanner = false,
   showHeader = true,
   showBottomNav = true,
 }: MobileLayoutProps) {
@@ -28,7 +28,11 @@ export function MobileLayout({
         ${showBottomNav ? "pb-20" : ""}
       `}
       >
-        {showStories && <StoriesCarousel />}
+        {showBanner && (
+          <div className="px-4 py-3">
+            <BannerDisplay position="mobile-home" />
+          </div>
+        )}
         {children}
       </main>
 

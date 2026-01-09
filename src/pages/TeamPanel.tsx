@@ -37,7 +37,16 @@ import {
   Image,
   BookOpen,
   Upload,
+  Lock,
 } from "lucide-react";
+
+interface TeamMemberPermissions {
+  create_posts?: boolean;
+  create_blogs?: boolean;
+  pin_posts?: boolean;
+  respond_comments?: boolean;
+  manage_blogs?: boolean;
+}
 
 interface TeamMember {
   id: string;
@@ -46,7 +55,17 @@ interface TeamMember {
   email: string;
   panel_enabled: boolean;
   panel_password: string | null;
+  permissions: TeamMemberPermissions | null;
 }
+
+// Valid mood values per DB constraint
+const moodOptions = [
+  { value: "happy", emoji: "😊", label: "Happy" },
+  { value: "calm", emoji: "😌", label: "Calm" },
+  { value: "sad", emoji: "😢", label: "Sad" },
+  { value: "angry", emoji: "😠", label: "Angry" },
+  { value: "love", emoji: "❤️", label: "Love" },
+];
 
 export default function TeamPanel() {
   const navigate = useNavigate();
@@ -59,9 +78,9 @@ export default function TeamPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [timeRange, setTimeRange] = useState<"7" | "30" | "90">("7");
   
-  // Post creation state
+  // Post creation state - use valid mood value, not emoji
   const [postContent, setPostContent] = useState("");
-  const [postMood, setPostMood] = useState("💬");
+  const [postMood, setPostMood] = useState("happy");
   const [postCategory, setPostCategory] = useState("General");
   const [postImage, setPostImage] = useState<File | null>(null);
   const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
@@ -81,13 +100,20 @@ export default function TeamPanel() {
   const [pinNote, setPinNote] = useState("");
   const [pinningPostId, setPinningPostId] = useState<string | null>(null);
 
+  // Permission helpers
+  const permissions = teamMember?.permissions || {};
+  const canCreatePosts = permissions.create_posts !== false;
+  const canCreateBlogs = permissions.create_blogs !== false;
+  const canPinPosts = permissions.pin_posts !== false;
+  const canRespondComments = permissions.respond_comments !== false;
+
   // Fetch team members with panel access enabled
   const { data: teamMembers } = useQuery({
     queryKey: ["teamMembersWithPanel"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("team_members")
-        .select("id, name, role, email, panel_enabled, panel_password")
+        .select("id, name, role, email, panel_enabled, panel_password, permissions")
         .eq("panel_enabled", true)
         .eq("is_active", true)
         .order("display_order", { ascending: true });
@@ -178,10 +204,22 @@ export default function TeamPanel() {
     }
   };
 
-  // Create post as team member
+  // Create post as team member - uses valid mood value
   const handleCreatePost = async () => {
     if (!postContent.trim()) {
       toast.error("Please enter post content");
+      return;
+    }
+
+    if (!canCreatePosts) {
+      toast.error("You don't have permission to create posts");
+      return;
+    }
+
+    // Validate mood is one of allowed values
+    const validMoods = ["happy", "calm", "sad", "angry", "love"];
+    if (!validMoods.includes(postMood)) {
+      toast.error("Invalid mood selected");
       return;
     }
 
@@ -207,10 +245,10 @@ export default function TeamPanel() {
         imageUrl = urlData.publicUrl;
       }
 
-      // Create post with team identity
+      // Create post with team identity - using valid mood value
       const { error } = await supabase.from("voices").insert({
         content: postContent,
-        mood: postMood,
+        mood: postMood, // Now a valid value like "happy", "calm", etc.
         category: postCategory,
         username: `TEAM DYNAMIC • ${teamMember?.role}`,
         is_anonymous: false,
@@ -221,7 +259,7 @@ export default function TeamPanel() {
 
       toast.success("Post created successfully!");
       setPostContent("");
-      setPostMood("💬");
+      setPostMood("happy");
       setPostCategory("General");
       setPostImage(null);
       setPostImagePreview(null);
@@ -237,6 +275,11 @@ export default function TeamPanel() {
   const handleCreateBlog = async () => {
     if (!blogTitle.trim() || !blogContent.trim()) {
       toast.error("Please enter title and content");
+      return;
+    }
+
+    if (!canCreateBlogs) {
+      toast.error("You don't have permission to create blogs");
       return;
     }
 
@@ -289,6 +332,11 @@ export default function TeamPanel() {
 
   // Pin a post
   const handlePinPost = async (voiceId: string) => {
+    if (!canPinPosts) {
+      toast.error("You don't have permission to pin posts");
+      return;
+    }
+
     try {
       // Get or create a user profile for the team member
       const { data: profile } = await supabase
@@ -327,6 +375,7 @@ export default function TeamPanel() {
       setPinNote("");
       setPinningPostId(null);
       queryClient.invalidateQueries({ queryKey: ["teamMetrics"] });
+      queryClient.invalidateQueries({ queryKey: ["pinnedVoiceIds"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to pin post");
     }
@@ -410,6 +459,11 @@ export default function TeamPanel() {
     },
     enabled: isAuthenticated,
   });
+
+  // Get emoji for mood value
+  const getMoodEmoji = (mood: string) => {
+    return moodOptions.find(m => m.value === mood)?.emoji || "😊";
+  };
 
   if (!isAuthenticated) {
     return (
@@ -497,6 +551,19 @@ export default function TeamPanel() {
     );
   }
 
+  // Render access denied for a tab
+  const renderAccessDenied = (feature: string) => (
+    <Card>
+      <CardContent className="p-8 text-center">
+        <Lock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="font-semibold mb-2">Access Restricted</h3>
+        <p className="text-sm text-muted-foreground">
+          You don't have permission to {feature}. Contact admin to request access.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -573,138 +640,163 @@ export default function TeamPanel() {
           </Card>
         </div>
 
-        {/* Content Tabs */}
-        <Tabs defaultValue="create">
+        {/* Content Tabs - Permission based */}
+        <Tabs defaultValue={canCreatePosts ? "create" : canCreateBlogs ? "blog" : "trending"}>
           <TabsList className="mb-4 w-full grid grid-cols-5 h-auto">
-            <TabsTrigger value="create" className="text-xs py-2"><Plus className="h-3 w-3 mr-1" />Post</TabsTrigger>
-            <TabsTrigger value="blog" className="text-xs py-2"><BookOpen className="h-3 w-3 mr-1" />Blog</TabsTrigger>
+            {canCreatePosts && (
+              <TabsTrigger value="create" className="text-xs py-2"><Plus className="h-3 w-3 mr-1" />Post</TabsTrigger>
+            )}
+            {canCreateBlogs && (
+              <TabsTrigger value="blog" className="text-xs py-2"><BookOpen className="h-3 w-3 mr-1" />Blog</TabsTrigger>
+            )}
             <TabsTrigger value="trending" className="text-xs py-2"><TrendingUp className="h-3 w-3 mr-1" />Top</TabsTrigger>
-            <TabsTrigger value="responses" className="text-xs py-2"><MessageCircle className="h-3 w-3" /></TabsTrigger>
-            <TabsTrigger value="pinned" className="text-xs py-2"><Pin className="h-3 w-3" /></TabsTrigger>
+            {canRespondComments && (
+              <TabsTrigger value="responses" className="text-xs py-2"><MessageCircle className="h-3 w-3" /></TabsTrigger>
+            )}
+            {canPinPosts && (
+              <TabsTrigger value="pinned" className="text-xs py-2"><Pin className="h-3 w-3" /></TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="create">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Create Post</CardTitle>
-                <CardDescription>Post as TEAM DYNAMIC • {teamMember?.role}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Select value={postMood} onValueChange={setPostMood}>
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["💬", "😊", "😢", "😤", "💡", "❤️", "🙏", "🎉"].map(m => (
-                        <SelectItem key={m} value={m}>{m}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={postCategory} onValueChange={setPostCategory}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(topics || ["General"]).map(t => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Textarea
-                  value={postContent}
-                  onChange={(e) => setPostContent(e.target.value)}
-                  placeholder="Share something with the community..."
-                  rows={4}
-                />
-                <div>
-                  <input
-                    type="file"
-                    ref={postImageRef}
-                    accept="image/*"
-                    onChange={handlePostImageChange}
-                    className="hidden"
+          {canCreatePosts ? (
+            <TabsContent value="create">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Create Post</CardTitle>
+                  <CardDescription>Post as TEAM DYNAMIC • {teamMember?.role}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    {/* Mood select with valid values */}
+                    <Select value={postMood} onValueChange={setPostMood}>
+                      <SelectTrigger className="w-24">
+                        <SelectValue>
+                          {getMoodEmoji(postMood)}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {moodOptions.map(m => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.emoji} {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={postCategory} onValueChange={setPostCategory}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(topics || ["General"]).map(t => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Textarea
+                    value={postContent}
+                    onChange={(e) => setPostContent(e.target.value)}
+                    placeholder="Share something with the community..."
+                    rows={4}
                   />
-                  {postImagePreview ? (
-                    <div className="relative">
-                      <img src={postImagePreview} alt="Preview" className="w-full h-40 object-cover rounded" />
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => { setPostImage(null); setPostImagePreview(null); }}
-                      >
-                        Remove
+                  <div>
+                    <input
+                      type="file"
+                      ref={postImageRef}
+                      accept="image/*"
+                      onChange={handlePostImageChange}
+                      className="hidden"
+                    />
+                    {postImagePreview ? (
+                      <div className="relative">
+                        <img src={postImagePreview} alt="Preview" className="w-full h-40 object-cover rounded" />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => { setPostImage(null); setPostImagePreview(null); }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => postImageRef.current?.click()}>
+                        <Image className="h-4 w-4 mr-2" />
+                        Add Image
                       </Button>
-                    </div>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={() => postImageRef.current?.click()}>
-                      <Image className="h-4 w-4 mr-2" />
-                      Add Image
-                    </Button>
-                  )}
-                </div>
-                <Button onClick={handleCreatePost} disabled={isPosting || !postContent.trim()} className="w-full">
-                  {isPosting ? "Posting..." : "Post as Team"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )}
+                  </div>
+                  <Button onClick={handleCreatePost} disabled={isPosting || !postContent.trim()} className="w-full">
+                    {isPosting ? "Posting..." : "Post as Team"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ) : (
+            <TabsContent value="create">
+              {renderAccessDenied("create posts")}
+            </TabsContent>
+          )}
 
-          <TabsContent value="blog">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Create Blog Post</CardTitle>
-                <CardDescription>Publish a blog as TEAM DYNAMIC • {teamMember?.name}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Title</Label>
-                  <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="Blog title" />
-                </div>
-                <div>
-                  <Label>Summary</Label>
-                  <Input value={blogSummary} onChange={(e) => setBlogSummary(e.target.value)} placeholder="Brief summary" />
-                </div>
-                <div>
-                  <Label>Content</Label>
-                  <Textarea value={blogContent} onChange={(e) => setBlogContent(e.target.value)} placeholder="Blog content..." rows={8} />
-                </div>
-                <div>
-                  <Label>Cover Image</Label>
-                  <input
-                    type="file"
-                    ref={blogImageRef}
-                    accept="image/*"
-                    onChange={handleBlogImageChange}
-                    className="hidden"
-                  />
-                  {blogImagePreview ? (
-                    <div className="relative mt-2">
-                      <img src={blogImagePreview} alt="Preview" className="w-full h-40 object-cover rounded" />
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => { setBlogImage(null); setBlogImagePreview(null); }}
-                      >
-                        Remove
+          {canCreateBlogs ? (
+            <TabsContent value="blog">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Create Blog Post</CardTitle>
+                  <CardDescription>Publish a blog as TEAM DYNAMIC • {teamMember?.name}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Title</Label>
+                    <Input value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="Blog title" />
+                  </div>
+                  <div>
+                    <Label>Summary</Label>
+                    <Input value={blogSummary} onChange={(e) => setBlogSummary(e.target.value)} placeholder="Brief summary" />
+                  </div>
+                  <div>
+                    <Label>Content</Label>
+                    <Textarea value={blogContent} onChange={(e) => setBlogContent(e.target.value)} placeholder="Blog content..." rows={8} />
+                  </div>
+                  <div>
+                    <Label>Cover Image</Label>
+                    <input
+                      type="file"
+                      ref={blogImageRef}
+                      accept="image/*"
+                      onChange={handleBlogImageChange}
+                      className="hidden"
+                    />
+                    {blogImagePreview ? (
+                      <div className="relative mt-2">
+                        <img src={blogImagePreview} alt="Preview" className="w-full h-40 object-cover rounded" />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={() => { setBlogImage(null); setBlogImagePreview(null); }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="outline" size="sm" className="mt-2" onClick={() => blogImageRef.current?.click()}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Cover
                       </Button>
-                    </div>
-                  ) : (
-                    <Button variant="outline" size="sm" className="mt-2" onClick={() => blogImageRef.current?.click()}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Cover
-                    </Button>
-                  )}
-                </div>
-                <Button onClick={handleCreateBlog} disabled={isBlogPosting || !blogTitle.trim() || !blogContent.trim()} className="w-full">
-                  {isBlogPosting ? "Publishing..." : "Publish Blog"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    )}
+                  </div>
+                  <Button onClick={handleCreateBlog} disabled={isBlogPosting || !blogTitle.trim() || !blogContent.trim()} className="w-full">
+                    {isBlogPosting ? "Publishing..." : "Publish Blog"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ) : (
+            <TabsContent value="blog">
+              {renderAccessDenied("create blogs")}
+            </TabsContent>
+          )}
 
           <TabsContent value="trending">
             <Card>
@@ -717,10 +809,10 @@ export default function TeamPanel() {
                       <div key={post.id} className="p-3 border rounded-lg">
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
-                            <span>{post.mood}</span>
+                            <span>{getMoodEmoji(post.mood)}</span>
                             <span className="text-xs px-2 py-0.5 bg-primary/10 rounded">{post.category}</span>
                           </div>
-                          {!pinnedIds?.has(post.id) && (
+                          {canPinPosts && !pinnedIds?.has(post.id) && (
                             pinningPostId === post.id ? (
                               <div className="flex gap-1">
                                 <Input
@@ -763,59 +855,71 @@ export default function TeamPanel() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="responses">
-            <Card>
-              <CardContent className="p-4">
-                {metrics?.recentComments?.length === 0 ? (
-                  <p className="text-center py-8 text-muted-foreground">No responses yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {metrics?.recentComments?.map((comment: any) => (
-                      <div key={comment.id} className="p-3 border rounded-lg">
-                        <p className="text-sm mb-2">{comment.content}</p>
-                        {comment.voices && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded line-clamp-2">
-                            Replying to: {comment.voices.content}
+          {canRespondComments ? (
+            <TabsContent value="responses">
+              <Card>
+                <CardContent className="p-4">
+                  {metrics?.recentComments?.length === 0 ? (
+                    <p className="text-center py-8 text-muted-foreground">No responses yet</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {metrics?.recentComments?.map((comment: any) => (
+                        <div key={comment.id} className="p-3 border rounded-lg">
+                          <p className="text-sm mb-2">{comment.content}</p>
+                          {comment.voices && (
+                            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded line-clamp-2">
+                              Replying to: {comment.voices.content}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {new Date(comment.created_at).toLocaleDateString()}
                           </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ) : (
+            <TabsContent value="responses">
+              {renderAccessDenied("view responses")}
+            </TabsContent>
+          )}
 
-          <TabsContent value="pinned">
-            <Card>
-              <CardContent className="p-4">
-                {metrics?.recentPinned?.length === 0 ? (
-                  <p className="text-center py-8 text-muted-foreground">No pinned posts yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {metrics?.recentPinned?.map((pin: any) => (
-                      <div key={pin.id} className="p-3 border rounded-lg">
-                        {pin.pin_note && (
-                          <p className="text-sm italic mb-2 border-l-2 border-primary pl-2">"{pin.pin_note}"</p>
-                        )}
-                        {pin.voices && (
-                          <div className="bg-muted/50 p-2 rounded">
-                            <p className="text-sm line-clamp-3">{pin.voices.content}</p>
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Pinned {new Date(pin.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {canPinPosts ? (
+            <TabsContent value="pinned">
+              <Card>
+                <CardContent className="p-4">
+                  {metrics?.recentPinned?.length === 0 ? (
+                    <p className="text-center py-8 text-muted-foreground">No pinned posts yet</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {metrics?.recentPinned?.map((pin: any) => (
+                        <div key={pin.id} className="p-3 border rounded-lg">
+                          {pin.pin_note && (
+                            <p className="text-sm italic mb-2 border-l-2 border-primary pl-2">"{pin.pin_note}"</p>
+                          )}
+                          {pin.voices && (
+                            <div className="bg-muted/50 p-2 rounded">
+                              <p className="text-sm line-clamp-3">{pin.voices.content}</p>
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Pinned {new Date(pin.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ) : (
+            <TabsContent value="pinned">
+              {renderAccessDenied("manage pinned posts")}
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

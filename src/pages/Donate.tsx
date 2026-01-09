@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigation } from "@/components/Navigation";
@@ -66,6 +66,37 @@ export default function Donate() {
     },
   });
 
+  // Realtime subscription for donations and settings
+  useEffect(() => {
+    const donationsChannel = supabase
+      .channel('donations_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'donations' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["publicDonations"] });
+          queryClient.invalidateQueries({ queryKey: ["totalDonations"] });
+        }
+      )
+      .subscribe();
+
+    const settingsChannel = supabase
+      .channel('donation_settings_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'donation_settings' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["donationSettings"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(donationsChannel);
+      supabase.removeChannel(settingsChannel);
+    };
+  }, [queryClient]);
+
   const copyUpiId = () => {
     if (settings?.upi_id) {
       navigator.clipboard.writeText(settings.upi_id);
@@ -105,8 +136,6 @@ export default function Donate() {
       setMessage("");
       setTransactionId("");
       setIsAnonymous(false);
-      queryClient.invalidateQueries({ queryKey: ["publicDonations"] });
-      queryClient.invalidateQueries({ queryKey: ["totalDonations"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to record donation");
     } finally {
@@ -199,7 +228,10 @@ export default function Donate() {
                       <img 
                         src={settings.qr_code_url} 
                         alt="Payment QR Code" 
-                        className="w-48 h-48 rounded-lg border"
+                        className="w-48 h-48 rounded-lg border object-contain bg-white"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                     </div>
                   )}
