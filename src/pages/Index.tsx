@@ -133,7 +133,7 @@ const Index = () => {
   // Mobile Feed View
   if (isMobile) {
     return (
-      <ResponsiveLayout mobileTitle="Your Voice" showStories={true}>
+      <ResponsiveLayout mobileTitle="Your Voice" showBanner={true}>
         {/* Mobile Feed */}
         <div className="divide-y divide-border">
           {loading ? (

@@ -6,7 +6,7 @@ import { DesktopLayout } from "./DesktopLayout";
 interface ResponsiveLayoutProps {
   children: ReactNode;
   mobileTitle?: string;
-  showStories?: boolean;
+  showBanner?: boolean;
   /** Set to true for pages that handle their own layout */
   noLayout?: boolean;
 }
@@ -14,7 +14,7 @@ interface ResponsiveLayoutProps {
 export function ResponsiveLayout({
   children,
   mobileTitle,
-  showStories = false,
+  showBanner = false,
   noLayout = false,
 }: ResponsiveLayoutProps) {
   const isMobile = useIsMobile();
@@ -25,7 +25,7 @@ export function ResponsiveLayout({
 
   if (isMobile) {
     return (
-      <MobileLayout title={mobileTitle} showStories={showStories}>
+      <MobileLayout title={mobileTitle} showBanner={showBanner}>
         {children}
       </MobileLayout>
     );
