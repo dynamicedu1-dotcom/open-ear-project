@@ -38,6 +38,8 @@ import {
   BookOpen,
   Upload,
   Lock,
+  Video,
+  Trash2,
 } from "lucide-react";
 
 interface TeamMemberPermissions {
@@ -84,8 +86,11 @@ export default function TeamPanel() {
   const [postCategory, setPostCategory] = useState("General");
   const [postImage, setPostImage] = useState<File | null>(null);
   const [postImagePreview, setPostImagePreview] = useState<string | null>(null);
+  const [postVideo, setPostVideo] = useState<File | null>(null);
+  const [postVideoPreview, setPostVideoPreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const postImageRef = useRef<HTMLInputElement>(null);
+  const postVideoRef = useRef<HTMLInputElement>(null);
   
   // Blog creation state
   const [blogTitle, setBlogTitle] = useState("");
@@ -188,7 +193,48 @@ export default function TeamPanel() {
       }
       setPostImage(file);
       setPostImagePreview(URL.createObjectURL(file));
+      // Clear video if image is selected
+      setPostVideo(null);
+      setPostVideoPreview(null);
     }
+  };
+
+  // Handle post video selection with 5-minute max duration
+  const handlePostVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Max 100MB for videos
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error("Video must be less than 100MB");
+      return;
+    }
+
+    // Check video duration (max 5 minutes)
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    
+    video.onloadedmetadata = () => {
+      window.URL.revokeObjectURL(video.src);
+      const duration = video.duration;
+      
+      if (duration > 300) { // 5 minutes = 300 seconds
+        toast.error("Video must be 5 minutes or less");
+        return;
+      }
+      
+      setPostVideo(file);
+      setPostVideoPreview(URL.createObjectURL(file));
+      // Clear image if video is selected
+      setPostImage(null);
+      setPostImagePreview(null);
+    };
+
+    video.onerror = () => {
+      toast.error("Could not read video file");
+    };
+
+    video.src = URL.createObjectURL(file);
   };
 
   // Handle blog image selection
@@ -226,13 +272,14 @@ export default function TeamPanel() {
     setIsPosting(true);
     try {
       let imageUrl = null;
+      let videoUrl = null;
 
       // Upload image if selected
       if (postImage) {
         const fileExt = postImage.name.split('.').pop();
         const fileName = `team-post-${Date.now()}.${fileExt}`;
         
-        const { error: uploadError, data: uploadData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("blog-images")
           .upload(fileName, postImage);
 
@@ -245,6 +292,24 @@ export default function TeamPanel() {
         imageUrl = urlData.publicUrl;
       }
 
+      // Upload video if selected
+      if (postVideo) {
+        const fileExt = postVideo.name.split('.').pop();
+        const fileName = `team-video-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from("videos")
+          .upload(fileName, postVideo);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("videos")
+          .getPublicUrl(fileName);
+        
+        videoUrl = urlData.publicUrl;
+      }
+
       // Create post with team identity - using valid mood value
       const { error } = await supabase.from("voices").insert({
         content: postContent,
@@ -253,6 +318,7 @@ export default function TeamPanel() {
         username: `TEAM DYNAMIC • ${teamMember?.role}`,
         is_anonymous: false,
         image_url: imageUrl,
+        video_url: videoUrl,
       });
 
       if (error) throw error;
@@ -263,11 +329,53 @@ export default function TeamPanel() {
       setPostCategory("General");
       setPostImage(null);
       setPostImagePreview(null);
+      setPostVideo(null);
+      setPostVideoPreview(null);
       queryClient.invalidateQueries({ queryKey: ["topStudentPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["teamPosts"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to create post");
     } finally {
       setIsPosting(false);
+    }
+  };
+
+  // Delete post
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("voices")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+      
+      toast.success("Post deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["topStudentPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["teamPosts"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete post");
+    }
+  };
+
+  // Delete blog
+  const handleDeleteBlog = async (blogId: string) => {
+    if (!confirm("Are you sure you want to delete this blog?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("weekly_blogs")
+        .delete()
+        .eq("id", blogId);
+
+      if (error) throw error;
+      
+      toast.success("Blog deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["teamBlogs"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete blog");
     }
   };
 
@@ -720,12 +828,38 @@ export default function TeamPanel() {
                         </Button>
                       </div>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => postImageRef.current?.click()}>
-                        <Image className="h-4 w-4 mr-2" />
-                        Add Image
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => postImageRef.current?.click()}>
+                          <Image className="h-4 w-4 mr-2" />
+                          Add Image
+                        </Button>
+                        <input
+                          type="file"
+                          ref={postVideoRef}
+                          accept="video/*"
+                          onChange={handlePostVideoChange}
+                          className="hidden"
+                        />
+                        <Button variant="outline" size="sm" onClick={() => postVideoRef.current?.click()}>
+                          <Video className="h-4 w-4 mr-2" />
+                          Add Video
+                        </Button>
+                      </div>
                     )}
                   </div>
+                  {postVideoPreview && (
+                    <div className="relative">
+                      <video src={postVideoPreview} controls className="w-full h-40 object-cover rounded" />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => { setPostVideo(null); setPostVideoPreview(null); }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
                   <Button onClick={handleCreatePost} disabled={isPosting || !postContent.trim()} className="w-full">
                     {isPosting ? "Posting..." : "Post as Team"}
                   </Button>

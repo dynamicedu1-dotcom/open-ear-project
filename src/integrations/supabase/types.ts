@@ -1348,6 +1348,7 @@ export type Database = {
           updated_at: string
           user_profile_id: string | null
           username: string | null
+          video_url: string | null
         }
         Insert: {
           age?: string | null
@@ -1367,6 +1368,7 @@ export type Database = {
           updated_at?: string
           user_profile_id?: string | null
           username?: string | null
+          video_url?: string | null
         }
         Update: {
           age?: string | null
@@ -1386,6 +1388,7 @@ export type Database = {
           updated_at?: string
           user_profile_id?: string | null
           username?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {
