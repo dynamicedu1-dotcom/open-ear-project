@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen, User, Download, ClipboardList, Heart, Image, BarChart3 } from "lucide-react";
+import { ArrowLeft, MessageCircle, MessageSquare, Lightbulb, Users, Star, Plus, Edit, Handshake, UserSquare, Tag, FileText, FolderTree, BookOpen, User, Download, ClipboardList, Heart, Image, BarChart3, Code } from "lucide-react";
 import { toast } from "sonner";
 import { PartnersManagement } from "@/components/PartnersManagement";
 import { TeamManagement } from "@/components/TeamManagement";
@@ -23,6 +23,7 @@ import { DonationsManagement } from "@/components/DonationsManagement";
 import { StaticPagesManagement } from "@/components/StaticPagesManagement";
 import { BannersManagement } from "@/components/BannersManagement";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { DeveloperInfoManagement } from "@/components/DeveloperInfoManagement";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { AdminPasswordDialog } from "@/components/AdminPasswordDialog";
 
@@ -249,6 +250,10 @@ export default function Admin() {
                 <Image className="h-4 w-4" />
                 <span className="hidden sm:inline">Banners</span>
               </TabsTrigger>
+              <TabsTrigger value="developer" className="flex items-center gap-2 min-h-[44px] px-4">
+                <Code className="h-4 w-4" />
+                <span className="hidden sm:inline">Developer</span>
+              </TabsTrigger>
               <TabsTrigger value="analytics" className="flex items-center gap-2 min-h-[44px] px-4">
                 <BarChart3 className="h-4 w-4" />
                 <span className="hidden sm:inline">Analytics</span>
@@ -326,6 +331,10 @@ export default function Admin() {
 
           <TabsContent value="banners">
             <BannersManagement />
+          </TabsContent>
+
+          <TabsContent value="developer">
+            <DeveloperInfoManagement />
           </TabsContent>
 
           <TabsContent value="analytics">

@@ -21,6 +21,7 @@ interface VoiceCardProps {
   supportCount: number;
   commentCount: number;
   imageUrl?: string;
+  videoUrl?: string;
   createdAt?: string;
   isTeamPost?: boolean;
   onSupport: (id: string) => void;
@@ -54,6 +55,7 @@ export const VoiceCard = ({
   supportCount,
   commentCount,
   imageUrl,
+  videoUrl,
   createdAt,
   isTeamPost,
   onSupport,
@@ -230,8 +232,23 @@ export const VoiceCard = ({
           {/* Content */}
           <p className="text-sm text-foreground/90 line-clamp-4">{displayContent}</p>
 
+          {/* Video */}
+          {videoUrl && (
+            <div className="rounded-lg overflow-hidden mt-3">
+              <video
+                src={videoUrl}
+                controls
+                className="w-full max-h-64 object-contain bg-black rounded-lg"
+                preload="metadata"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Your browser does not support video playback.
+              </video>
+            </div>
+          )}
+
           {/* Image */}
-          {imageUrl && (
+          {imageUrl && !videoUrl && (
             <div className="rounded-lg overflow-hidden mt-3">
               <img src={imageUrl} alt="" className="w-full h-40 object-cover" />
             </div>
