@@ -41,6 +41,7 @@ import {
   Video,
   Trash2,
   User,
+  Pencil,
 } from "lucide-react";
 
 interface TeamMemberPermissions {
@@ -105,6 +106,20 @@ export default function TeamPanel() {
   // Pin state
   const [pinNote, setPinNote] = useState("");
   const [pinningPostId, setPinningPostId] = useState<string | null>(null);
+
+  // Edit post state
+  const [editingPost, setEditingPost] = useState<any | null>(null);
+  const [editPostContent, setEditPostContent] = useState("");
+  const [editPostMood, setEditPostMood] = useState("happy");
+  const [editPostCategory, setEditPostCategory] = useState("General");
+  const [isUpdatingPost, setIsUpdatingPost] = useState(false);
+
+  // Edit blog state
+  const [editingBlog, setEditingBlog] = useState<any | null>(null);
+  const [editBlogTitle, setEditBlogTitle] = useState("");
+  const [editBlogContent, setEditBlogContent] = useState("");
+  const [editBlogSummary, setEditBlogSummary] = useState("");
+  const [isUpdatingBlog, setIsUpdatingBlog] = useState(false);
 
   // Permission helpers
   const permissions = teamMember?.permissions || {};
@@ -375,8 +390,86 @@ export default function TeamPanel() {
       
       toast.success("Blog deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["teamBlogs"] });
+      queryClient.invalidateQueries({ queryKey: ["myTeamBlogs"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete blog");
+    }
+  };
+
+  // Open edit post dialog
+  const openEditPost = (post: any) => {
+    setEditingPost(post);
+    setEditPostContent(post.content || "");
+    setEditPostMood(post.mood || "happy");
+    setEditPostCategory(post.category || "General");
+  };
+
+  // Update post
+  const handleUpdatePost = async () => {
+    if (!editingPost || !editPostContent.trim()) {
+      toast.error("Content cannot be empty");
+      return;
+    }
+
+    setIsUpdatingPost(true);
+    try {
+      const { error } = await supabase
+        .from("voices")
+        .update({
+          content: editPostContent,
+          mood: editPostMood,
+          category: editPostCategory,
+        })
+        .eq("id", editingPost.id);
+
+      if (error) throw error;
+
+      toast.success("Post updated successfully");
+      setEditingPost(null);
+      queryClient.invalidateQueries({ queryKey: ["myTeamPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["topStudentPosts"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update post");
+    } finally {
+      setIsUpdatingPost(false);
+    }
+  };
+
+  // Open edit blog dialog
+  const openEditBlog = (blog: any) => {
+    setEditingBlog(blog);
+    setEditBlogTitle(blog.title || "");
+    setEditBlogContent(blog.content || "");
+    setEditBlogSummary(blog.summary || "");
+  };
+
+  // Update blog
+  const handleUpdateBlog = async () => {
+    if (!editingBlog || !editBlogTitle.trim() || !editBlogContent.trim()) {
+      toast.error("Title and content cannot be empty");
+      return;
+    }
+
+    setIsUpdatingBlog(true);
+    try {
+      const { error } = await supabase
+        .from("weekly_blogs")
+        .update({
+          title: editBlogTitle,
+          content: editBlogContent,
+          summary: editBlogSummary || null,
+        })
+        .eq("id", editingBlog.id);
+
+      if (error) throw error;
+
+      toast.success("Blog updated successfully");
+      setEditingBlog(null);
+      queryClient.invalidateQueries({ queryKey: ["myTeamBlogs"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update blog");
+    } finally {
+      setIsUpdatingBlog(false);
     }
   };
 
@@ -1058,14 +1151,24 @@ export default function TeamPanel() {
                                 {new Date(post.created_at).toLocaleDateString()}
                               </span>
                             </div>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />Delete
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 text-xs"
+                                onClick={() => openEditPost(post)}
+                              >
+                                <Pencil className="h-3 w-3 mr-1" />Edit
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeletePost(post.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                           <p className="text-sm line-clamp-2">{post.content}</p>
                           {post.image_url && (
@@ -1106,14 +1209,24 @@ export default function TeamPanel() {
                                 {blog.publish_date ? new Date(blog.publish_date).toLocaleDateString() : 'Draft'}
                               </span>
                             </div>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => handleDeleteBlog(blog.id)}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />Delete
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 text-xs"
+                                onClick={() => openEditBlog(blog)}
+                              >
+                                <Pencil className="h-3 w-3 mr-1" />Edit
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteBlog(blog.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                           {blog.summary && (
                             <p className="text-sm text-muted-foreground line-clamp-2">{blog.summary}</p>
@@ -1202,6 +1315,103 @@ export default function TeamPanel() {
             </TabsContent>
           )}
         </Tabs>
+
+        {/* Edit Post Dialog */}
+        <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Edit Post</DialogTitle>
+              <DialogDescription>Update your post content, mood, and category</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex gap-2">
+                <Select value={editPostMood} onValueChange={setEditPostMood}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue>
+                      {getMoodEmoji(editPostMood)}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {moodOptions.map(m => (
+                      <SelectItem key={m.value} value={m.value}>
+                        {m.emoji} {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={editPostCategory} onValueChange={setEditPostCategory}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(topics || ["General"]).map(t => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Textarea
+                value={editPostContent}
+                onChange={(e) => setEditPostContent(e.target.value)}
+                placeholder="Post content..."
+                rows={5}
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingPost(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdatePost} disabled={isUpdatingPost || !editPostContent.trim()}>
+                  {isUpdatingPost ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Blog Dialog */}
+        <Dialog open={!!editingBlog} onOpenChange={(open) => !open && setEditingBlog(null)}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Blog</DialogTitle>
+              <DialogDescription>Update your blog title, summary, and content</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>Title</Label>
+                <Input 
+                  value={editBlogTitle} 
+                  onChange={(e) => setEditBlogTitle(e.target.value)} 
+                  placeholder="Blog title" 
+                />
+              </div>
+              <div>
+                <Label>Summary</Label>
+                <Input 
+                  value={editBlogSummary} 
+                  onChange={(e) => setEditBlogSummary(e.target.value)} 
+                  placeholder="Brief summary (optional)" 
+                />
+              </div>
+              <div>
+                <Label>Content</Label>
+                <Textarea 
+                  value={editBlogContent} 
+                  onChange={(e) => setEditBlogContent(e.target.value)} 
+                  placeholder="Blog content..." 
+                  rows={10} 
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEditingBlog(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateBlog} disabled={isUpdatingBlog || !editBlogTitle.trim() || !editBlogContent.trim()}>
+                  {isUpdatingBlog ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
