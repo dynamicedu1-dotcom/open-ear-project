@@ -40,6 +40,7 @@ import {
   Lock,
   Video,
   Trash2,
+  User,
 } from "lucide-react";
 
 interface TeamMemberPermissions {
@@ -556,6 +557,38 @@ export default function TeamPanel() {
     enabled: isAuthenticated,
   });
 
+  // Fetch team member's own posts
+  const { data: myPosts } = useQuery({
+    queryKey: ["myTeamPosts", teamMember?.name],
+    queryFn: async () => {
+      if (!teamMember) return [];
+      const { data } = await supabase
+        .from("voices")
+        .select("*")
+        .ilike("username", `%${teamMember.name}%`)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return data || [];
+    },
+    enabled: isAuthenticated && !!teamMember,
+  });
+
+  // Fetch team member's own blogs
+  const { data: myBlogs } = useQuery({
+    queryKey: ["myTeamBlogs", teamMember?.name],
+    queryFn: async () => {
+      if (!teamMember) return [];
+      const { data } = await supabase
+        .from("weekly_blogs")
+        .select("*")
+        .ilike("author_name", `%${teamMember.name}%`)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return data || [];
+    },
+    enabled: isAuthenticated && !!teamMember,
+  });
+
   // Check if post is already pinned
   const { data: pinnedIds } = useQuery({
     queryKey: ["pinnedVoiceIds"],
@@ -750,7 +783,7 @@ export default function TeamPanel() {
 
         {/* Content Tabs - Permission based */}
         <Tabs defaultValue={canCreatePosts ? "create" : canCreateBlogs ? "blog" : "trending"}>
-          <TabsList className="mb-4 w-full grid grid-cols-5 h-auto">
+          <TabsList className="mb-4 w-full grid grid-cols-6 h-auto">
             {canCreatePosts && (
               <TabsTrigger value="create" className="text-xs py-2"><Plus className="h-3 w-3 mr-1" />Post</TabsTrigger>
             )}
@@ -758,6 +791,7 @@ export default function TeamPanel() {
               <TabsTrigger value="blog" className="text-xs py-2"><BookOpen className="h-3 w-3 mr-1" />Blog</TabsTrigger>
             )}
             <TabsTrigger value="trending" className="text-xs py-2"><TrendingUp className="h-3 w-3 mr-1" />Top</TabsTrigger>
+            <TabsTrigger value="mycontent" className="text-xs py-2"><User className="h-3 w-3 mr-1" />My</TabsTrigger>
             {canRespondComments && (
               <TabsTrigger value="responses" className="text-xs py-2"><MessageCircle className="h-3 w-3" /></TabsTrigger>
             )}
@@ -946,31 +980,41 @@ export default function TeamPanel() {
                             <span>{getMoodEmoji(post.mood)}</span>
                             <span className="text-xs px-2 py-0.5 bg-primary/10 rounded">{post.category}</span>
                           </div>
-                          {canPinPosts && !pinnedIds?.has(post.id) && (
-                            pinningPostId === post.id ? (
-                              <div className="flex gap-1">
-                                <Input
-                                  value={pinNote}
-                                  onChange={(e) => setPinNote(e.target.value)}
-                                  placeholder="Pin note..."
-                                  className="h-8 text-xs w-32"
-                                />
-                                <Button size="sm" className="h-8" onClick={() => handlePinPost(post.id)}>
-                                  <Pin className="h-3 w-3" />
+                          <div className="flex items-center gap-1">
+                            {canPinPosts && !pinnedIds?.has(post.id) && (
+                              pinningPostId === post.id ? (
+                                <div className="flex gap-1">
+                                  <Input
+                                    value={pinNote}
+                                    onChange={(e) => setPinNote(e.target.value)}
+                                    placeholder="Pin note..."
+                                    className="h-8 text-xs w-32"
+                                  />
+                                  <Button size="sm" className="h-8" onClick={() => handlePinPost(post.id)}>
+                                    <Pin className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-8" onClick={() => setPinningPostId(null)}>
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPinningPostId(post.id)}>
+                                  <Pin className="h-3 w-3 mr-1" />Pin
                                 </Button>
-                                <Button size="sm" variant="ghost" className="h-8" onClick={() => setPinningPostId(null)}>
-                                  ✕
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPinningPostId(post.id)}>
-                                <Pin className="h-3 w-3 mr-1" />Pin
-                              </Button>
-                            )
-                          )}
-                          {pinnedIds?.has(post.id) && (
-                            <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded">Pinned</span>
-                          )}
+                              )
+                            )}
+                            {pinnedIds?.has(post.id) && (
+                              <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded">Pinned</span>
+                            )}
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeletePost(post.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                         <p className="text-sm line-clamp-3 mb-2">{post.content}</p>
                         {post.image_url && (
@@ -987,6 +1031,109 @@ export default function TeamPanel() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* My Content Tab */}
+          <TabsContent value="mycontent">
+            <div className="space-y-4">
+              {/* My Posts */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Plus className="h-4 w-4" /> My Posts ({myPosts?.length || 0})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  {myPosts?.length === 0 ? (
+                    <p className="text-center py-4 text-muted-foreground text-sm">No posts created yet</p>
+                  ) : (
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {myPosts?.map((post: any) => (
+                        <div key={post.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span>{getMoodEmoji(post.mood)}</span>
+                              <span className="text-xs px-2 py-0.5 bg-primary/10 rounded">{post.category}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(post.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeletePost(post.id)}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />Delete
+                            </Button>
+                          </div>
+                          <p className="text-sm line-clamp-2">{post.content}</p>
+                          {post.image_url && (
+                            <img src={post.image_url} alt="" className="w-full h-20 object-cover rounded mt-2" />
+                          )}
+                          {post.video_url && (
+                            <video src={post.video_url} controls className="w-full h-20 object-cover rounded mt-2" />
+                          )}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                            <span>❤️ {(post.support_count || 0) + (post.likes_count || 0)}</span>
+                            <span>💬 {post.comment_count || 0}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* My Blogs */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" /> My Blogs ({myBlogs?.length || 0})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  {myBlogs?.length === 0 ? (
+                    <p className="text-center py-4 text-muted-foreground text-sm">No blogs created yet</p>
+                  ) : (
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {myBlogs?.map((blog: any) => (
+                        <div key={blog.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm line-clamp-1">{blog.title}</h4>
+                              <span className="text-xs text-muted-foreground">
+                                {blog.publish_date ? new Date(blog.publish_date).toLocaleDateString() : 'Draft'}
+                              </span>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteBlog(blog.id)}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />Delete
+                            </Button>
+                          </div>
+                          {blog.summary && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{blog.summary}</p>
+                          )}
+                          {blog.cover_image_url && (
+                            <img src={blog.cover_image_url} alt="" className="w-full h-20 object-cover rounded mt-2" />
+                          )}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                            <span>👁️ {blog.views || 0} views</span>
+                            <span className={blog.is_published ? "text-green-600" : "text-amber-600"}>
+                              {blog.is_published ? "Published" : "Draft"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {canRespondComments ? (

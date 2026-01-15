@@ -19,17 +19,14 @@ export function MobileLayout({
   showBottomNav = true,
 }: MobileLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {showHeader && <MobileHeader title={title} />}
 
       <main
-        className={`
-        ${showHeader ? "pt-14" : ""} 
-        ${showBottomNav ? "pb-20" : ""}
-      `}
+        className={`flex-1 ${showHeader ? "pt-14" : ""} ${showBottomNav ? "pb-20" : ""}`}
       >
         {showBanner && (
-          <div className="px-4 py-3">
+          <div className="px-3 pt-3">
             <BannerDisplay position="mobile-home" />
           </div>
         )}
