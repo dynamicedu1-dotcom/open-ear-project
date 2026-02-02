@@ -8,9 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Heart, Copy, CheckCircle, Gift, Users, Target } from "lucide-react";
+import { Heart, Copy, CheckCircle, Gift, Users, Target, CreditCard, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function Donate() {
   const queryClient = useQueryClient();
@@ -22,8 +28,21 @@ export default function Donate() {
   const [transactionId, setTransactionId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
-  // Fetch donation settings
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
   const { data: settings } = useQuery({
     queryKey: ["donationSettings"],
     queryFn: async () => {
@@ -103,6 +122,92 @@ export default function Donate() {
       setCopied(true);
       toast.success("UPI ID copied!");
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    if (!razorpayLoaded) {
+      toast.error("Payment system is loading. Please try again.");
+      return;
+    }
+
+    setIsRazorpayLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: parseFloat(amount),
+          currency: 'INR',
+          notes: {
+            donor_name: isAnonymous ? 'Anonymous' : donorName,
+            message: message || '',
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      const options = {
+        key: data.key_id,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.order_id,
+        name: 'Your Voice - Dynamic Edu',
+        description: 'Donation to support our mission',
+        handler: async function (response: any) {
+          // Payment successful, record the donation
+          try {
+            const { error: insertError } = await supabase.from("donations").insert({
+              amount: parseFloat(amount),
+              donor_name: isAnonymous ? null : donorName,
+              donor_email: donorEmail || null,
+              is_anonymous: isAnonymous,
+              message: message || null,
+              transaction_id: response.razorpay_payment_id,
+              payment_method: 'razorpay',
+              status: "completed",
+            });
+
+            if (insertError) throw insertError;
+
+            toast.success("Thank you for your donation!");
+            setDonorName("");
+            setDonorEmail("");
+            setAmount("");
+            setMessage("");
+            setIsAnonymous(false);
+          } catch (err: any) {
+            toast.error("Payment received but failed to record. Please contact support.");
+            console.error('Error recording donation:', err);
+          }
+        },
+        prefill: {
+          name: isAnonymous ? '' : donorName,
+          email: donorEmail,
+        },
+        theme: {
+          color: '#6366f1',
+        },
+        modal: {
+          ondismiss: function () {
+            setIsRazorpayLoading(false);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to initiate payment");
+      console.error('Razorpay error:', error);
+    } finally {
+      setIsRazorpayLoading(false);
     }
   };
 
@@ -257,6 +362,92 @@ export default function Donate() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Razorpay Payment Section */}
+            <Card className="border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Pay Online
+                </CardTitle>
+                <CardDescription>Secure payment via Razorpay</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="razorpay-amount">Amount (₹)</Label>
+                  <Input
+                    id="razorpay-amount"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Enter amount"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="razorpay-anonymous"
+                    checked={isAnonymous}
+                    onCheckedChange={setIsAnonymous}
+                  />
+                  <Label htmlFor="razorpay-anonymous">Donate anonymously</Label>
+                </div>
+
+                {!isAnonymous && (
+                  <div className="space-y-2">
+                    <Label htmlFor="razorpay-name">Your Name</Label>
+                    <Input
+                      id="razorpay-name"
+                      value={donorName}
+                      onChange={(e) => setDonorName(e.target.value)}
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="razorpay-email">Email (for receipt)</Label>
+                  <Input
+                    id="razorpay-email"
+                    type="email"
+                    value={donorEmail}
+                    onChange={(e) => setDonorEmail(e.target.value)}
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="razorpay-message">Message (optional)</Label>
+                  <Textarea
+                    id="razorpay-message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Leave a message of support..."
+                    className="min-h-[60px]"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleRazorpayPayment} 
+                  className="w-full gradient-accent"
+                  disabled={isRazorpayLoading || !razorpayLoaded}
+                >
+                  {isRazorpayLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Pay with Razorpay
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
 
             {/* Record Donation Form */}
             <Card>
