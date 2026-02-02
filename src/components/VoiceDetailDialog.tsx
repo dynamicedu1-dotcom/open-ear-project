@@ -22,6 +22,8 @@ interface Voice {
   location: string | null;
   support_count: number;
   comment_count: number;
+  image_url?: string | null;
+  video_url?: string | null;
   created_at: string;
 }
 
@@ -189,6 +191,26 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
               <div className="py-12 text-center text-muted-foreground">Loading...</div>
             ) : voice ? (
               <div className="space-y-6">
+              {/* Voice Media */}
+              {voice.image_url && (
+                <div className="rounded-lg overflow-hidden">
+                  <img
+                    src={voice.image_url}
+                    alt="Voice attachment"
+                    className="w-full max-h-80 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+              {voice.video_url && (
+                <div className="rounded-lg overflow-hidden">
+                  <video
+                    src={voice.video_url}
+                    controls
+                    className="w-full max-h-80 rounded-lg"
+                  />
+                </div>
+              )}
+
               {/* Voice Content */}
               <div className="space-y-3">
                 <p className="text-foreground leading-relaxed whitespace-pre-wrap">

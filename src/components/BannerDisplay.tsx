@@ -11,6 +11,9 @@ interface BannerDisplayProps {
 export function BannerDisplay({ position, className = "" }: BannerDisplayProps) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
+  // For mobile-home, also fallback to home-hero banners
+  const positions = position === "mobile-home" ? ["mobile-home", "home-hero"] : [position];
+
   const { data: banners } = useQuery({
     queryKey: ["banners", position],
     queryFn: async () => {
@@ -18,7 +21,7 @@ export function BannerDisplay({ position, className = "" }: BannerDisplayProps) 
       const { data, error } = await supabase
         .from("banners")
         .select("*")
-        .eq("position", position)
+        .in("position", positions)
         .eq("is_active", true)
         .or(`starts_at.is.null,starts_at.lte.${now}`)
         .or(`ends_at.is.null,ends_at.gte.${now}`)

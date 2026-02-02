@@ -26,8 +26,8 @@ export function MobileLayout({
         className={`flex-1 ${showHeader ? "pt-14" : ""} ${showBottomNav ? "pb-20" : ""}`}
       >
         {showBanner && (
-          <div className="px-3 pt-3">
-            <BannerDisplay position="mobile-home" />
+          <div className="px-4 pt-4 pb-2">
+            <BannerDisplay position="mobile-home" className="mb-0" />
           </div>
         )}
         {children}
