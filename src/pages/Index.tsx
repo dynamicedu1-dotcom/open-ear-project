@@ -22,6 +22,7 @@ interface Voice {
   support_count: number;
   comment_count: number;
   image_url?: string;
+  video_url?: string;
   created_at?: string;
 }
 
@@ -174,6 +175,7 @@ const Index = () => {
                   supportCount={voice.support_count}
                   commentCount={voice.comment_count}
                   imageUrl={voice.image_url}
+                  videoUrl={voice.video_url}
                   createdAt={voice.created_at}
                   onSupport={handleSupport}
                   onClick={handleVoiceClick}
@@ -282,6 +284,7 @@ const Index = () => {
                   supportCount={voice.support_count}
                   commentCount={voice.comment_count}
                   imageUrl={voice.image_url}
+                  videoUrl={voice.video_url}
                   createdAt={voice.created_at}
                   onSupport={handleSupport}
                   onClick={handleVoiceClick}

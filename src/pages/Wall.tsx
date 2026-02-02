@@ -39,6 +39,7 @@ interface Voice {
   likes_count?: number;
   reshare_count?: number;
   image_url?: string;
+  video_url?: string;
   created_at: string;
 }
 
@@ -418,6 +419,7 @@ const Wall = () => {
                 supportCount={voice.support_count}
                 commentCount={voice.comment_count}
                 imageUrl={voice.image_url}
+                videoUrl={voice.video_url}
                 createdAt={voice.created_at}
                 onSupport={handleSupport}
                 onClick={handleVoiceClick}
