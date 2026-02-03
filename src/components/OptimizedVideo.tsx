@@ -69,8 +69,9 @@ export const OptimizedVideo = ({
   };
 
   const handleLoadedMetadata = () => {
-    // Video metadata loaded, can show poster frame
+    // Video metadata loaded - show the video immediately
     setIsLoading(false);
+    setIsReady(true);
   };
 
   const handleWaiting = () => {
