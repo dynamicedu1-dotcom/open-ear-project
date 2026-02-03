@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CommentCard } from "./CommentCard";
 import { CommentForm } from "./CommentForm";
+import { OptimizedVideo } from "./OptimizedVideo";
 import { Heart, MessageCircle, MapPin, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -202,13 +203,11 @@ export const VoiceDetailDialog = ({ voiceId, open, onOpenChange }: VoiceDetailDi
                 </div>
               )}
               {voice.video_url && (
-                <div className="rounded-lg overflow-hidden">
-                  <video
-                    src={voice.video_url}
-                    controls
-                    className="w-full max-h-80 rounded-lg"
-                  />
-                </div>
+                <OptimizedVideo
+                  src={voice.video_url}
+                  maxHeight="max-h-80"
+                  lazyLoad={false}
+                />
               )}
 
               {/* Voice Content */}

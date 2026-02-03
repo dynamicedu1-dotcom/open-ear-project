@@ -6,6 +6,7 @@ import { Badge } from "./ui/badge";
 import { useIdentity } from "@/hooks/useIdentity";
 import { EmailCaptureModal } from "./EmailCaptureModal";
 import { ShareModal } from "./ShareModal";
+import { OptimizedVideo } from "./OptimizedVideo";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -234,17 +235,13 @@ export const VoiceCard = ({
 
           {/* Video */}
           {videoUrl && (
-            <div className="rounded-lg overflow-hidden mt-3">
-              <video
-                src={videoUrl}
-                controls
-                className="w-full max-h-64 object-contain bg-black rounded-lg"
-                preload="metadata"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Your browser does not support video playback.
-              </video>
-            </div>
+            <OptimizedVideo
+              src={videoUrl}
+              className="mt-3"
+              maxHeight="max-h-64"
+              onClick={(e) => e.stopPropagation()}
+              lazyLoad={true}
+            />
           )}
 
           {/* Image */}
