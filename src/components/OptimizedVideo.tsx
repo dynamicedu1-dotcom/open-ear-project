@@ -51,7 +51,7 @@ export const OptimizedVideo = ({
       },
       {
         threshold: 0.1,
-        rootMargin: "100px", // Pre-load 100px before visible
+        rootMargin: "300px", // Pre-load earlier for smoother start
       }
     );
 
@@ -89,8 +89,8 @@ export const OptimizedVideo = ({
       className={cn("relative rounded-lg overflow-hidden bg-muted", className)}
       onClick={onClick}
     >
-      {/* Loading skeleton */}
-      {isLoading && (
+      {/* Loading skeleton (only for initial load, avoid double-buffer UI with native controls) */}
+      {isLoading && !isReady && (
         <div className="absolute inset-0 z-10">
           <Skeleton className={cn("w-full h-full", maxHeight)} />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -103,6 +103,7 @@ export const OptimizedVideo = ({
       {isVisible && (
         <video
           ref={videoRef}
+          src={src}
           className={cn(
             "w-full object-contain bg-black rounded-lg transition-opacity duration-300",
             maxHeight,
@@ -113,15 +114,13 @@ export const OptimizedVideo = ({
           muted={muted}
           loop={loop}
           playsInline
-          preload="metadata"
+          preload="auto"
           poster={poster}
           onCanPlay={handleCanPlay}
           onLoadedMetadata={handleLoadedMetadata}
           onWaiting={handleWaiting}
           onPlaying={handlePlaying}
         >
-          <source src={src} type="video/mp4" />
-          <source src={src} type="video/webm" />
           Your browser does not support video playback.
         </video>
       )}
